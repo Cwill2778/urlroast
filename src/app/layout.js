@@ -1,8 +1,8 @@
 import "./globals.css";
 
 export const metadata = {
-  title: "Roast My Landing Page | Brutally Honest AI Audit",
-  description: "Get a brutally honest, slightly hilarious AI audit of your landing page for just $2.",
+  title: "Cronan Technology | Premium Digital Agency",
+  description: "Cronan Technology specializes in high-performance web applications, AI automation, and conversion rate optimization for modern businesses.",
 };
 
 import Link from 'next/link';
@@ -15,10 +15,11 @@ export default function RootLayout({ children }) {
         {/* Global Navbar */}
         <nav style={{ padding: '1.5rem 2rem', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <Link href="/" style={{ fontWeight: 'bold', fontSize: '1.2rem', color: 'var(--foreground)', textDecoration: 'none' }}>
-            CronanTech <span className="gradient-text">Roaster</span>
+            Cronan<span className="gradient-text">Tech</span>
           </Link>
           <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'center' }}>
             <Link href="/" style={{ color: '#d4d4d8', textDecoration: 'none', fontSize: '0.95rem' }}>Home</Link>
+            <Link href="/roaster" style={{ color: '#d4d4d8', textDecoration: 'none', fontSize: '0.95rem' }}>AI Roaster</Link>
             <a href="mailto:info@cronantech.com" style={{ color: '#d4d4d8', textDecoration: 'none', fontSize: '0.95rem' }}>Contact Us</a>
           </div>
         </nav>

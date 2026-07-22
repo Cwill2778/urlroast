@@ -13,7 +13,7 @@ export async function POST(req) {
     const protocol = host.includes('localhost') ? 'http' : 'https';
     const domain = `${protocol}://${host}`;
     
-    const successUrl = `${domain}/roast?url=${encodeURIComponent(url)}&audience=${encodeURIComponent(audience)}&tier=${encodeURIComponent(tier)}`;
+    const successUrl = `${domain}/roaster/results?url=${encodeURIComponent(url)}&audience=${encodeURIComponent(audience)}&tier=${encodeURIComponent(tier)}`;
 
     // Bypass Stripe if no key is provided
     if (!process.env.STRIPE_SECRET_KEY || process.env.STRIPE_SECRET_KEY.startsWith('pk_')) {
@@ -65,7 +65,7 @@ export async function POST(req) {
       ],
       mode: 'payment',
       success_url: successUrl,
-      cancel_url: `${domain}/`,
+      cancel_url: `${domain}/roaster`,
     });
 
     return NextResponse.json({ url: session.url });

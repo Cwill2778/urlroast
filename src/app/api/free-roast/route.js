@@ -32,7 +32,7 @@ export async function POST(req) {
     const protocol = host.includes('localhost') ? 'http' : 'https';
     const domain = `${protocol}://${host}`;
     
-    const successUrl = `${domain}/roast?url=${encodeURIComponent(url)}&audience=${encodeURIComponent(audience)}&tier=free`;
+    const successUrl = `${domain}/roaster/results?url=${encodeURIComponent(url)}&audience=${encodeURIComponent(audience)}&tier=free`;
 
     return NextResponse.json({ url: successUrl });
   } catch (error) {
