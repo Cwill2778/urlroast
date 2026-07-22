@@ -200,7 +200,7 @@ export default function Home() {
             <div className="glass-panel animate-fade-in delay-100" style={{ borderColor: 'var(--primary)' }}>
               <h2 style={{ fontSize: '1.8rem', marginBottom: '1.5rem', textAlign: 'center' }}>What does $10 get you?</h2>
               <p style={{ textAlign: 'center', fontSize: '1.1rem', lineHeight: '1.6', marginBottom: '1.5rem' }}>
-                Everything in the $2 roast, PLUS our AI will actually rewrite your landing page copy for you.
+                Everything in the $2 roast, PLUS we will actually rewrite your landing page copy for you.
               </p>
               <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '1rem', fontSize: '1.1rem' }}>
                 <li style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
