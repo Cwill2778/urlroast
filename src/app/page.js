@@ -41,8 +41,27 @@ export default function Home() {
       alert('Please provide your URL and Email.');
       return;
     }
-    alert('Free Mini-Roast will be sent to your email! (Database integration pending)');
-    // We will hook this up to /api/free-roast later
+    
+    setIsLoading(true);
+    try {
+      const res = await fetch('/api/free-roast', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url, email, audience })
+      });
+      
+      const data = await res.json();
+      if (data.url) {
+        window.location.href = data.url; 
+      } else {
+        alert('Failed to process request.');
+        setIsLoading(false);
+      }
+    } catch (err) {
+      console.error(err);
+      alert('An error occurred.');
+      setIsLoading(false);
+    }
   };
 
   return (
