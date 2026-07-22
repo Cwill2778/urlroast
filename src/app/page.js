@@ -254,14 +254,6 @@ export default function Home() {
 
       </div>
 
-      <footer style={{ width: '100%', padding: '2rem', marginTop: 'auto', borderTop: '1px solid var(--border)', textAlign: 'center', color: '#a1a1aa', fontSize: '0.9rem' }}>
-        <p style={{ marginBottom: '1rem' }}>&copy; 2026 Cronan Technology. All rights reserved.</p>
-        <div style={{ display: 'flex', justifyContent: 'center', gap: '2rem', flexWrap: 'wrap' }}>
-          <a href="mailto:support@cronantech.com" style={{ textDecoration: 'underline' }}>support@cronantech.com</a>
-          <a href="mailto:refund@cronantech.com" style={{ textDecoration: 'underline' }}>refund@cronantech.com</a>
-          <a href="mailto:info@cronantech.com" style={{ textDecoration: 'underline' }}>info@cronantech.com</a>
-        </div>
-      </footer>
     </main>
   );
 }
