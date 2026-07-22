@@ -3,7 +3,7 @@ import Stripe from 'stripe';
 
 export async function POST(req) {
   try {
-    const { url, email, audience, tier } = await req.json();
+    const { url, email, audience, tier, promoCode } = await req.json();
     
     if (!url || !email) {
       return NextResponse.json({ error: 'URL and Email are required' }, { status: 400 });
@@ -26,7 +26,21 @@ export async function POST(req) {
     });
 
     const isPremium = tier === 'premium';
-    const price = isPremium ? 1000 : 200; // $10.00 or $2.00
+    let price = isPremium ? 1000 : 200; // $10.00 or $2.00
+    
+    // Apply Promo Codes
+    const cleanPromo = (promoCode || '').trim().toUpperCase();
+    if (cleanPromo === 'FREEROAST26') {
+      price = 0;
+    } else if (cleanPromo === 'ROAST50') {
+      price = isPremium ? 500 : 100; // 50% off
+    }
+
+    // If price is 0, we bypass Stripe entirely because Stripe doesn't allow $0 one-time checkouts
+    if (price === 0) {
+      return NextResponse.json({ url: successUrl });
+    }
+
     const productName = isPremium ? 'Landing Page Roast + Rewrite' : 'Landing Page Roast';
     const description = isPremium 
       ? `Brutally honest AI audit + new optimized copy for ${url}`

@@ -5,6 +5,7 @@ export default function Home() {
   const [url, setUrl] = useState('');
   const [email, setEmail] = useState('');
   const [audience, setAudience] = useState('General Audience');
+  const [promoCode, setPromoCode] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
   const handleCheckout = async (tier) => {
@@ -19,7 +20,7 @@ export default function Home() {
       const res = await fetch('/api/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url, email, audience, tier })
+        body: JSON.stringify({ url, email, audience, tier, promoCode })
       });
       
       const data = await res.json();
@@ -141,6 +142,17 @@ export default function Home() {
                   <option value="Creators / Influencers">Creators / Influencers</option>
                   <option value="Enterprise Buyers">Enterprise Buyers</option>
                 </select>
+              </div>
+
+              <div>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem', color: '#d4d4d8' }}>Promo Code (Optional)</label>
+                <input 
+                  type="text" 
+                  placeholder="e.g. ROAST50" 
+                  value={promoCode}
+                  onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
+                  className="input-field"
+                />
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginTop: '1rem' }}>
