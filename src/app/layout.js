@@ -6,11 +6,18 @@ export const metadata = {
 };
 
 import Link from 'next/link';
+import { Oswald, Space_Mono } from 'next/font/google';
+import CustomCursor from '@/components/CustomCursor';
+import AudioPlayer from '@/components/AudioPlayer';
+import TerminalOverlay from '@/components/TerminalOverlay';
+
+const oswald = Oswald({ subsets: ['latin'], variable: '--font-oswald' });
+const spaceMono = Space_Mono({ weight: ['400', '700'], subsets: ['latin'], variable: '--font-space' });
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en">
-      <body style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+    <html lang="en" className={`${oswald.variable} ${spaceMono.variable}`}>
+      <body style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', position: 'relative' }}>
         
         {/* Global Navbar */}
         <nav style={{ padding: '1.5rem 2rem', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -36,6 +43,11 @@ export default function RootLayout({ children }) {
             <a href="mailto:info@cronantech.com" style={{ textDecoration: 'underline', color: '#d4d4d8' }}>Contact Us</a>
           </div>
         </footer>
+
+        {/* Interactive Overlays */}
+        <CustomCursor />
+        <AudioPlayer src="/audio.mp3" />
+        <TerminalOverlay />
 
       </body>
     </html>
