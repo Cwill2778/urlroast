@@ -7,7 +7,7 @@ import { motion } from 'framer-motion';
 export default function AudioPlayer({ src = '/audio.mp3' }) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [volume, setVolume] = useState(0.5);
-  const [isMuted, setIsMuted] = useState(false);
+  const [isMuted, setIsMuted] = useState(true);
   const audioRef = useRef(null);
 
   useEffect(() => {
