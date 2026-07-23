@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { Terminal, ChevronDown } from 'lucide-react';
+import { Terminal, ChevronDown, Phone, Mail } from 'lucide-react';
 import AudioPlayer from './AudioPlayer';
 
 export default function Navbar() {
@@ -64,8 +64,16 @@ export default function Navbar() {
         </div>
 
         <Link href="/about" style={{ color: '#d4d4d8', textDecoration: 'none', fontSize: '0.95rem' }}>About</Link>
-        <a href="mailto:info@cronantech.com" style={{ color: '#d4d4d8', textDecoration: 'none', fontSize: '0.95rem' }}>Contact</a>
-        
+        <div style={{ position: 'relative' }} className="nav-contact-group">
+          <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'center' }}>
+            <a href="tel:7068448193" style={{ color: '#d4d4d8', textDecoration: 'none', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '0.4rem', fontFamily: 'var(--font-space)' }}>
+              <Phone size={14} /> (706) 844-8193
+            </a>
+            <a href="mailto:c.brianna@cronantech.com" style={{ color: '#d4d4d8', textDecoration: 'none', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '0.4rem', fontFamily: 'var(--font-space)' }}>
+              <Mail size={14} /> c.brianna@cronantech.com
+            </a>
+          </div>
+        </div>
         <div style={{ width: '1px', height: '20px', background: 'var(--border)' }}></div>
 
         {/* Utilities */}
