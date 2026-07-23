@@ -19,8 +19,15 @@ export default function TerminalOverlay() {
         setIsOpen((prev) => !prev);
       }
     };
+    const handleOpenEvent = () => setIsOpen(true);
+    
     window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    window.addEventListener('open-terminal', handleOpenEvent);
+    
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('open-terminal', handleOpenEvent);
+    };
   }, []);
 
   useEffect(() => {
@@ -68,35 +75,6 @@ export default function TerminalOverlay() {
 
   return (
     <>
-      {/* CLI Toggle Bar at the very bottom */}
-      {!isOpen && (
-        <div 
-          onClick={() => setIsOpen(true)}
-          style={{
-            position: 'fixed',
-            bottom: 0,
-            left: '50%',
-            transform: 'translateX(-50%)',
-            background: 'var(--surface)',
-            border: '1px solid var(--border)',
-            borderBottom: 'none',
-            padding: '0.2rem 1rem',
-            borderTopLeftRadius: '8px',
-            borderTopRightRadius: '8px',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.5rem',
-            cursor: 'pointer',
-            zIndex: 40,
-            fontSize: '0.8rem',
-            fontFamily: 'var(--font-space)',
-            color: '#a1a1aa'
-          }}
-        >
-          <TerminalIcon size={14} />
-          <span>Press Ctrl+K or click to open CLI</span>
-        </div>
-      )}
 
       {/* Terminal Overlay */}
       <AnimatePresence>

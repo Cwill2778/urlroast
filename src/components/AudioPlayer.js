@@ -26,65 +26,26 @@ export default function AudioPlayer({ src = '/audio.mp3' }) {
     setIsPlaying(!isPlaying);
   };
 
-  const toggleMute = () => {
-    setIsMuted(!isMuted);
-  };
-
   return (
-    <motion.div 
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: 1 }}
-      style={{
-        position: 'fixed',
-        bottom: '2rem',
-        right: '2rem',
-        background: 'var(--glass-bg)',
-        backdropFilter: 'blur(12px)',
-        border: '1px solid var(--glass-border)',
-        borderRadius: '50px',
-        padding: '0.5rem 1rem',
-        display: 'flex',
-        alignItems: 'center',
-        gap: '1rem',
-        zIndex: 50,
-        boxShadow: '0 8px 32px 0 rgba(0, 0, 0, 0.5)'
-      }}
-    >
+    <div style={{ display: 'flex', alignItems: 'center' }}>
       <audio ref={audioRef} src={src} loop />
       
       <button 
         onClick={togglePlay}
-        style={{ background: 'none', border: 'none', color: 'var(--primary)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-      >
-        {isPlaying ? <Square size={20} fill="currentColor" /> : <Play size={20} fill="currentColor" />}
-      </button>
-
-      <div style={{ width: '1px', height: '20px', background: 'var(--border)' }} />
-
-      <button 
-        onClick={toggleMute}
-        style={{ background: 'none', border: 'none', color: 'var(--foreground)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-      >
-        {isMuted || volume === 0 ? <VolumeX size={18} /> : <Volume2 size={18} />}
-      </button>
-
-      <input 
-        type="range" 
-        min="0" 
-        max="1" 
-        step="0.05" 
-        value={isMuted ? 0 : volume}
-        onChange={(e) => {
-          setVolume(parseFloat(e.target.value));
-          if (isMuted && parseFloat(e.target.value) > 0) setIsMuted(false);
+        title={isPlaying ? "Pause Ambient Audio" : "Play Ambient Audio"}
+        style={{ 
+          background: 'none', 
+          border: 'none', 
+          color: isPlaying ? 'var(--primary)' : '#a1a1aa', 
+          cursor: 'pointer', 
+          display: 'flex', 
+          alignItems: 'center', 
+          justifyContent: 'center',
+          transition: 'color 0.2s'
         }}
-        style={{
-          width: '60px',
-          accentColor: 'var(--primary)',
-          cursor: 'pointer'
-        }}
-      />
-    </motion.div>
+      >
+        {isPlaying ? <Square size={16} fill="currentColor" /> : <Play size={16} fill="currentColor" />}
+      </button>
+    </div>
   );
 }

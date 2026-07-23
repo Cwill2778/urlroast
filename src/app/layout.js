@@ -5,11 +5,10 @@ export const metadata = {
   description: "Cronan Technology specializes in high-performance web applications, AI automation, and conversion rate optimization for modern businesses.",
 };
 
-import Link from 'next/link';
 import { Oswald, Space_Mono } from 'next/font/google';
 import CustomCursor from '@/components/CustomCursor';
-import AudioPlayer from '@/components/AudioPlayer';
 import TerminalOverlay from '@/components/TerminalOverlay';
+import Navbar from '@/components/Navbar';
 
 const oswald = Oswald({ subsets: ['latin'], variable: '--font-oswald' });
 const spaceMono = Space_Mono({ weight: ['400', '700'], subsets: ['latin'], variable: '--font-space' });
@@ -19,17 +18,7 @@ export default function RootLayout({ children }) {
     <html lang="en" className={`${oswald.variable} ${spaceMono.variable}`}>
       <body style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', position: 'relative' }}>
         
-        {/* Global Navbar */}
-        <nav style={{ padding: '1.5rem 2rem', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Link href="/" style={{ fontWeight: 'bold', fontSize: '1.2rem', color: 'var(--foreground)', textDecoration: 'none' }}>
-            Cronan<span className="gradient-text">Tech</span>
-          </Link>
-          <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'center' }}>
-            <Link href="/" style={{ color: '#d4d4d8', textDecoration: 'none', fontSize: '0.95rem' }}>Home</Link>
-            <Link href="/roaster" style={{ color: '#d4d4d8', textDecoration: 'none', fontSize: '0.95rem' }}>AI Roaster</Link>
-            <a href="mailto:info@cronantech.com" style={{ color: '#d4d4d8', textDecoration: 'none', fontSize: '0.95rem' }}>Contact Us</a>
-          </div>
-        </nav>
+        <Navbar />
 
         {/* Main Content Area */}
         <div style={{ flex: 1 }}>
@@ -46,7 +35,6 @@ export default function RootLayout({ children }) {
 
         {/* Interactive Overlays */}
         <CustomCursor />
-        <AudioPlayer src="/audio.mp3" />
         <TerminalOverlay />
 
       </body>
