@@ -1,5 +1,4 @@
 import { NextResponse } from 'next/server';
-import { GoogleGenAI } from '@google/genai';
 
 export async function POST(req) {
   try {
@@ -9,8 +8,8 @@ export async function POST(req) {
       return NextResponse.json({ error: 'URL is required' }, { status: 400 });
     }
 
-    if (!process.env.GEMINI_API_KEY) {
-      throw new Error("GEMINI_API_KEY is not configured.");
+    if (!process.env.XAI_API_KEY) {
+      throw new Error("XAI_API_KEY is not configured.");
     }
 
     // Attempt to fetch the website content
@@ -30,8 +29,6 @@ export async function POST(req) {
       console.warn("Failed to fetch URL directly, falling back to URL-only roast:", e);
     }
 
-    const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
-    
     const isPremium = tier === 'premium';
     const targetAudience = audience || 'General Audience';
 
@@ -56,7 +53,6 @@ export async function POST(req) {
     jsonStructure += `}`;
 
     const prompt = `
-      You are a brutally honest, slightly hilarious, and highly expert Conversion Rate Optimization (CRO) auditor.
       I am submitting a landing page for you to roast. 
       URL: ${url}
       Target Audience: ${targetAudience}
@@ -71,15 +67,40 @@ export async function POST(req) {
       Make it funny, insightful, and ensure the JSON is valid and raw (no markdown formatting blocks like \`\`\`json).
     `;
 
-    const response = await ai.models.generateContent({
-      model: 'gemini-2.0-flash',
-      contents: prompt,
-      config: {
-        responseMimeType: 'application/json',
-      }
+    const response = await fetch("https://api.x.ai/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${process.env.XAI_API_KEY}`,
+      },
+      body: JSON.stringify({
+        messages: [
+          {
+            role: "system",
+            content: "You are a brutally honest, slightly hilarious, and highly expert Conversion Rate Optimization (CRO) auditor.",
+          },
+          {
+            role: "user",
+            content: prompt,
+          },
+        ],
+        model: "grok-2-latest",
+        stream: false,
+        temperature: 0.7,
+      }),
     });
+
+    if (!response.ok) {
+        const errText = await response.text();
+        throw new Error(`xAI API Error: ${response.status} - ${errText}`);
+    }
+
+    const data = await response.json();
+    let responseText = data.choices[0].message.content;
     
-    const responseText = response.text;
+    // Clean up potential markdown formatting block if Grok returns it anyway
+    responseText = responseText.replace(/^\\s*\`\`\`json/m, '').replace(/\`\`\`\\s*$/m, '').trim();
+
     const parsedData = JSON.parse(responseText);
 
     return NextResponse.json(parsedData);
