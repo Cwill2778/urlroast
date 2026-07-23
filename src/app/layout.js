@@ -9,6 +9,8 @@ import { Oswald, Space_Mono } from 'next/font/google';
 import CustomCursor from '@/components/CustomCursor';
 import TerminalOverlay from '@/components/TerminalOverlay';
 import Navbar from '@/components/Navbar';
+import BootLoader from '@/components/BootLoader';
+import PageTransition from '@/components/PageTransition';
 
 const oswald = Oswald({ subsets: ['latin'], variable: '--font-oswald' });
 const spaceMono = Space_Mono({ weight: ['400', '700'], subsets: ['latin'], variable: '--font-space' });
@@ -16,13 +18,30 @@ const spaceMono = Space_Mono({ weight: ['400', '700'], subsets: ['latin'], varia
 export default function RootLayout({ children }) {
   return (
     <html lang="en" className={`${oswald.variable} ${spaceMono.variable}`}>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              try {
+                let theme = localStorage.getItem('cronan-theme');
+                if (theme) {
+                  document.documentElement.style.setProperty('--primary', theme);
+                }
+              } catch (e) {}
+            `,
+          }}
+        />
+      </head>
       <body style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', position: 'relative' }}>
         
+        <BootLoader />
         <Navbar />
 
         {/* Main Content Area */}
-        <div style={{ flex: 1 }}>
-          {children}
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+          <PageTransition>
+            {children}
+          </PageTransition>
         </div>
 
         {/* Global Footer */}

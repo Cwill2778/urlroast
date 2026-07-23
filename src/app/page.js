@@ -1,11 +1,20 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { motion, useScroll, useTransform } from 'framer-motion';
 
 export default function Portfolio() {
   const { scrollYProgress } = useScroll();
   const yParallax = useTransform(scrollYProgress, [0, 1], [0, -100]);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   return (
     <main style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '4rem 2rem 0 2rem' }}>
@@ -42,7 +51,7 @@ export default function Portfolio() {
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.2 }}
-            whileHover={{ rotateX: 5, rotateY: -5, scale: 1.02, boxShadow: '0 30px 60px rgba(255, 183, 3, 0.15)' }}
+            whileHover={isMobile ? {} : { rotateX: 5, rotateY: -5, scale: 1.02, boxShadow: '0 30px 60px rgba(255, 183, 3, 0.15)' }}
             style={{ 
               background: 'linear-gradient(145deg, rgba(20,20,20,0.9) 0%, rgba(5,5,5,1) 100%)', 
               border: '1px solid var(--border)', 
@@ -73,7 +82,7 @@ export default function Portfolio() {
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.3 }}
-            whileHover={{ rotateX: 5, rotateY: 0, scale: 1.02, boxShadow: '0 30px 60px rgba(255, 183, 3, 0.15)' }}
+            whileHover={isMobile ? {} : { rotateX: 5, rotateY: 0, scale: 1.02, boxShadow: '0 30px 60px rgba(255, 183, 3, 0.15)' }}
             style={{ 
               background: 'linear-gradient(145deg, rgba(20,20,20,0.9) 0%, rgba(5,5,5,1) 100%)', 
               border: '1px solid var(--border)', 
@@ -104,7 +113,7 @@ export default function Portfolio() {
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.4 }}
-            whileHover={{ rotateX: 5, rotateY: 5, scale: 1.02, boxShadow: '0 30px 60px rgba(255, 183, 3, 0.15)' }}
+            whileHover={isMobile ? {} : { rotateX: 5, rotateY: 5, scale: 1.02, boxShadow: '0 30px 60px rgba(255, 183, 3, 0.15)' }}
             style={{ 
               background: 'linear-gradient(145deg, rgba(20,20,20,0.9) 0%, rgba(5,5,5,1) 100%)', 
               border: '1px solid var(--border)', 
