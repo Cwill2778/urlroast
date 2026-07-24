@@ -2,7 +2,7 @@
 
 import { motion } from 'framer-motion';
 import Link from 'next/link';
-import { Database, Code2, BrainCircuit } from 'lucide-react';
+import { Database, Code2, BrainCircuit, Hammer, Home } from 'lucide-react';
 
 export default function SoftwareSilo() {
   return (
@@ -225,6 +225,105 @@ export default function SoftwareSilo() {
             </p>
           </motion.div>
           
+        </section>
+
+        {/* SECTION 3.5: Case Study 03 - Full Stack Deployment */}
+        <section style={{ margin: '8rem 0', display: 'flex', flexWrap: 'wrap', gap: '4rem', alignItems: 'center' }}>
+          <motion.div 
+            initial={{ opacity: 0, x: -50 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+            style={{ flex: '1 1 400px' }}
+          >
+            <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.5rem', flexWrap: 'wrap' }}>
+              <span className="badge">[ Next.js ]</span>
+              <span className="badge">[ Web Design ]</span>
+              <span className="badge">[ Deployment ]</span>
+            </div>
+            <h2 style={{ fontSize: '2.5rem', marginBottom: '1.5rem', color: '#fff' }}>Nailed It Property Solutions</h2>
+            
+            <h3 style={{ fontSize: '1.1rem', color: 'var(--primary)', marginBottom: '0.5rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>The Client</h3>
+            <p style={{ color: '#a1a1aa', lineHeight: '1.7', marginBottom: '1.5rem', fontFamily: 'var(--font-space)' }}>
+              Charles Willis required a professional digital presence to establish credibility and capture leads for his property management and handyman services.
+            </p>
+
+            <h3 style={{ fontSize: '1.1rem', color: 'var(--primary)', marginBottom: '0.5rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>The Architecture</h3>
+            <p style={{ color: '#a1a1aa', lineHeight: '1.7', marginBottom: '1.5rem', fontFamily: 'var(--font-space)' }}>
+              A high-performance, SEO-optimized marketing website built on modern web technologies. Deployed at <strong>naileditpropertysolutions.com</strong>, the platform features a responsive design, clear service funnels, and integrated contact points.
+            </p>
+
+            <h3 style={{ fontSize: '1.1rem', color: 'var(--primary)', marginBottom: '0.5rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>The Impact</h3>
+            <p style={{ color: '#a1a1aa', lineHeight: '1.7', fontFamily: 'var(--font-space)' }}>
+              Provides a robust digital storefront that converts local traffic into verified service inquiries, elevating the brand's visibility in a competitive regional market.
+            </p>
+          </motion.div>
+          
+          <motion.div 
+            initial={{ opacity: 0, x: 50 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+            style={{ flex: '1 1 400px' }}
+          >
+            <div style={{ 
+              background: 'linear-gradient(145deg, rgba(30,30,30,1) 0%, rgba(10,10,10,1) 100%)', 
+              borderRadius: '12px', 
+              padding: '1rem', 
+              border: '1px solid #333',
+              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)'
+            }}>
+              {/* Desktop Browser Mockup */}
+              <div style={{ 
+                background: '#0a0a0a', 
+                borderRadius: '8px', 
+                height: '350px', 
+                width: '100%',
+                border: '1px solid #222',
+                display: 'flex',
+                flexDirection: 'column',
+                position: 'relative',
+                overflow: 'hidden'
+              }}>
+                {/* Browser Header */}
+                <div style={{ padding: '0.75rem', background: '#111', borderBottom: '1px solid #222', display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                  <div style={{ width: '12px', height: '12px', borderRadius: '50%', background: '#ff5f56' }} />
+                  <div style={{ width: '12px', height: '12px', borderRadius: '50%', background: '#ffbd2e' }} />
+                  <div style={{ width: '12px', height: '12px', borderRadius: '50%', background: '#27c93f' }} />
+                  <div style={{ marginLeft: '1rem', background: '#1a1a1a', padding: '0.3rem 1rem', borderRadius: '6px', fontSize: '0.75rem', color: '#666', flex: 1, textAlign: 'center', fontFamily: 'var(--font-space)' }}>
+                    naileditpropertysolutions.com
+                  </div>
+                </div>
+                {/* Browser Body / Website UI */}
+                <div style={{ flex: 1, padding: '2rem', display: 'flex', flexDirection: 'column', position: 'relative' }}>
+                  {/* Header */}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2.5rem' }}>
+                    <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: '#fff', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <Hammer size={20} color="var(--primary)" /> Nailed It
+                    </div>
+                    <div style={{ display: 'flex', gap: '1rem', opacity: 0.3 }}>
+                      <div style={{ width: '40px', height: '4px', background: '#fff', borderRadius: '2px' }} />
+                      <div style={{ width: '40px', height: '4px', background: '#fff', borderRadius: '2px' }} />
+                      <div style={{ width: '40px', height: '4px', background: '#fff', borderRadius: '2px' }} />
+                    </div>
+                  </div>
+                  {/* Hero Section */}
+                  <div style={{ maxWidth: '65%', marginTop: '1rem' }}>
+                    <div style={{ width: '90%', height: '28px', background: 'linear-gradient(90deg, #fff, #888)', borderRadius: '4px', marginBottom: '1rem' }} />
+                    <div style={{ width: '70%', height: '28px', background: 'linear-gradient(90deg, #fff, #888)', borderRadius: '4px', marginBottom: '2rem' }} />
+                    <div style={{ width: '100%', height: '8px', background: '#333', borderRadius: '4px', marginBottom: '0.75rem' }} />
+                    <div style={{ width: '90%', height: '8px', background: '#333', borderRadius: '4px', marginBottom: '0.75rem' }} />
+                    <div style={{ width: '70%', height: '8px', background: '#333', borderRadius: '4px', marginBottom: '2.5rem' }} />
+                    <div style={{ width: '120px', height: '36px', background: 'var(--primary)', borderRadius: '6px' }} />
+                  </div>
+                  {/* Abstract image block */}
+                  <div style={{ position: 'absolute', right: '2rem', top: '7rem', width: '140px', height: '180px', background: '#141414', border: '1px solid #222', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '-10px 10px 30px rgba(0,0,0,0.5)' }}>
+                    <Home size={40} color="#333" />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </motion.div>
         </section>
 
         {/* SECTION 4: The AI & Agentic Workflow Advantage */}
