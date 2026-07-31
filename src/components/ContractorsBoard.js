@@ -27,6 +27,7 @@ export default function ContractorsBoard({ user }) {
       await addDoc(collection(db, 'contractors'), {
         uid: user.uid,
         displayName: user.displayName || 'Roman',
+        photoURL: user.photoURL || null,
         availability,
         specialty,
         phone,
@@ -73,7 +74,27 @@ export default function ContractorsBoard({ user }) {
 
         {contractors.map(c => (
           <motion.div key={c.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} style={{ background: '#1a1a1a', padding: '1rem', borderRadius: '8px', border: '1px solid #333' }}>
-            <div style={{ color: 'var(--primary)', fontWeight: 'bold', fontFamily: 'var(--font-oswald)', marginBottom: '0.25rem' }}>{c.displayName}</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.25rem' }}>
+              <div style={{
+                width: '32px',
+                height: '32px',
+                borderRadius: '50%',
+                background: '#222',
+                flexShrink: 0,
+                overflow: 'hidden',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                border: '1px solid #444',
+                backgroundImage: c.photoURL ? `url(${c.photoURL})` : 'none',
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+              }}>
+                {!c.photoURL && <span style={{ color: '#666', fontSize: '0.8rem', fontWeight: 'bold' }}>{c.displayName.charAt(0).toUpperCase()}</span>}
+              </div>
+              <div style={{ color: 'var(--primary)', fontWeight: 'bold', fontFamily: 'var(--font-oswald)' }}>{c.displayName}</div>
+            </div>
+            
             <div style={{ color: '#aaa', fontSize: '0.8rem', fontFamily: 'var(--font-space)', marginBottom: '0.5rem' }}>{c.specialty}</div>
             
             {c.comments && <div style={{ color: '#fff', fontSize: '0.9rem', marginBottom: '0.5rem', lineHeight: '1.4' }}>{c.comments}</div>}

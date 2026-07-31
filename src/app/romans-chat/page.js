@@ -100,6 +100,7 @@ export default function RomansChat() {
       await addDoc(collection(db, 'messages'), {
         author: user.displayName || 'Roman',
         uid: user.uid,
+        photoURL: user.photoURL || null,
         text: text,
         replyTo: replyData,
         timestamp: serverTimestamp(),
@@ -203,95 +204,117 @@ export default function RomansChat() {
                     alignSelf: isSelf ? 'flex-end' : 'flex-start',
                     maxWidth: '85%',
                     display: 'flex',
-                    flexDirection: 'column',
-                    gap: '0.25rem',
+                    gap: '0.75rem',
+                    flexDirection: isSelf ? 'row-reverse' : 'row',
                     position: 'relative'
                   }}
                   onMouseLeave={() => setShowEmojiPicker(null)}
                 >
-                  {/* Sender Info & Actions */}
-                  <div style={{ 
-                    display: 'flex', 
-                    alignItems: 'center', 
-                    gap: '0.5rem', 
-                    fontSize: '0.75rem', 
-                    color: isAdmin ? 'var(--primary)' : '#888',
-                    alignSelf: isSelf ? 'flex-end' : 'flex-start',
-                    fontFamily: 'var(--font-space)'
+                  {/* Avatar */}
+                  <div style={{
+                    width: '36px',
+                    height: '36px',
+                    borderRadius: '50%',
+                    background: '#222',
+                    flexShrink: 0,
+                    overflow: 'hidden',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    border: isAdmin ? '2px solid var(--primary)' : '1px solid #444',
+                    backgroundImage: msg.photoURL ? `url(${msg.photoURL})` : 'none',
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'center',
+                    marginTop: '1.2rem'
                   }}>
-                    {msg.author}
-                    {!isSelf && (
-                      <div className="chat-actions" style={{ display: 'flex', gap: '0.5rem', opacity: 0.7 }}>
-                        <button onClick={() => setReplyingTo({ id: msg.id, author: msg.author, text: msg.text })} style={{ background:'none', border:'none', color:'#aaa', cursor:'pointer' }}><CornerUpLeft size={12} /></button>
-                        <button onClick={() => setShowEmojiPicker(showEmojiPicker === msg.id ? null : msg.id)} style={{ background:'none', border:'none', color:'#aaa', cursor:'pointer' }}><Smile size={12} /></button>
+                    {!msg.photoURL && <span style={{ color: '#666', fontSize: '0.8rem', fontWeight: 'bold' }}>{msg.author.charAt(0).toUpperCase()}</span>}
+                  </div>
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', maxWidth: 'calc(100% - 48px)' }}>
+                    {/* Sender Info & Actions */}
+                    <div style={{ 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      gap: '0.5rem', 
+                      fontSize: '0.75rem', 
+                      color: isAdmin ? 'var(--primary)' : '#888',
+                      alignSelf: isSelf ? 'flex-end' : 'flex-start',
+                      fontFamily: 'var(--font-space)'
+                    }}>
+                      {msg.author}
+                      {!isSelf && (
+                        <div className="chat-actions" style={{ display: 'flex', gap: '0.5rem', opacity: 0.7 }}>
+                          <button onClick={() => setReplyingTo({ id: msg.id, author: msg.author, text: msg.text })} style={{ background:'none', border:'none', color:'#aaa', cursor:'pointer' }}><CornerUpLeft size={12} /></button>
+                          <button onClick={() => setShowEmojiPicker(showEmojiPicker === msg.id ? null : msg.id)} style={{ background:'none', border:'none', color:'#aaa', cursor:'pointer' }}><Smile size={12} /></button>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Quoted Reply */}
+                    {msg.replyTo && (
+                      <div style={{
+                        background: 'rgba(255, 255, 255, 0.05)',
+                        borderLeft: '2px solid var(--primary)',
+                        padding: '0.5rem',
+                        borderRadius: '4px',
+                        fontSize: '0.8rem',
+                        color: '#aaa',
+                        marginBottom: '0.25rem',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap'
+                      }}>
+                        <span style={{ color: 'var(--primary)' }}>{msg.replyTo.author}: </span>
+                        {msg.replyTo.text}
+                      </div>
+                    )}
+
+                    {/* Message Bubble */}
+                    <div style={{ 
+                      background: isSelf ? 'var(--primary)' : isAdmin ? 'rgba(255,183,3,0.1)' : '#1a1a1a', 
+                      color: isSelf ? '#000' : '#fff',
+                      border: isAdmin ? '1px solid rgba(255,183,3,0.3)' : '1px solid #333',
+                      padding: '0.75rem 1rem', 
+                      borderRadius: isSelf ? '16px 16px 0 16px' : '16px 16px 16px 0',
+                      fontSize: '1rem',
+                      lineHeight: '1.4',
+                      wordBreak: 'break-word',
+                      position: 'relative'
+                    }}>
+                      {renderMessageText(msg.text)}
+                    </div>
+
+                    {/* Reactions Badge */}
+                    {msg.reactions && Object.keys(msg.reactions).length > 0 && (
+                      <div style={{ display: 'flex', gap: '0.25rem', flexWrap: 'wrap', marginTop: '0.25rem', alignSelf: isSelf ? 'flex-end' : 'flex-start' }}>
+                        {Object.entries(msg.reactions).map(([emoji, uids]) => {
+                          if (!uids || uids.length === 0) return null;
+                          const hasReacted = uids.includes(user.uid);
+                          return (
+                            <button 
+                              key={emoji}
+                              onClick={() => handleReaction(msg.id, emoji, hasReacted)}
+                              style={{ 
+                                background: hasReacted ? 'rgba(255,183,3,0.2)' : '#222',
+                                border: hasReacted ? '1px solid var(--primary)' : '1px solid #333',
+                                borderRadius: '12px',
+                                padding: '2px 6px',
+                                fontSize: '0.8rem',
+                                color: '#fff',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '4px'
+                              }}
+                            >
+                              <span>{emoji}</span>
+                              <span style={{ fontSize: '0.7rem' }}>{uids.length}</span>
+                            </button>
+                          );
+                        })}
                       </div>
                     )}
                   </div>
-
-                  {/* Quoted Reply */}
-                  {msg.replyTo && (
-                    <div style={{
-                      background: 'rgba(255, 255, 255, 0.05)',
-                      borderLeft: '2px solid var(--primary)',
-                      padding: '0.5rem',
-                      borderRadius: '4px',
-                      fontSize: '0.8rem',
-                      color: '#aaa',
-                      marginBottom: '0.25rem',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      whiteSpace: 'nowrap'
-                    }}>
-                      <span style={{ color: 'var(--primary)' }}>{msg.replyTo.author}: </span>
-                      {msg.replyTo.text}
-                    </div>
-                  )}
-
-                  {/* Message Bubble */}
-                  <div style={{ 
-                    background: isSelf ? 'var(--primary)' : isAdmin ? 'rgba(255,183,3,0.1)' : '#1a1a1a', 
-                    color: isSelf ? '#000' : '#fff',
-                    border: isAdmin ? '1px solid rgba(255,183,3,0.3)' : '1px solid #333',
-                    padding: '0.75rem 1rem', 
-                    borderRadius: isSelf ? '16px 16px 0 16px' : '16px 16px 16px 0',
-                    fontSize: '1rem',
-                    lineHeight: '1.4',
-                    wordBreak: 'break-word',
-                    position: 'relative'
-                  }}>
-                    {renderMessageText(msg.text)}
-                  </div>
-
-                  {/* Reactions Badge */}
-                  {msg.reactions && Object.keys(msg.reactions).length > 0 && (
-                    <div style={{ display: 'flex', gap: '0.25rem', flexWrap: 'wrap', marginTop: '0.25rem', alignSelf: isSelf ? 'flex-end' : 'flex-start' }}>
-                      {Object.entries(msg.reactions).map(([emoji, uids]) => {
-                        if (!uids || uids.length === 0) return null;
-                        const hasReacted = uids.includes(user.uid);
-                        return (
-                          <button 
-                            key={emoji}
-                            onClick={() => handleReaction(msg.id, emoji, hasReacted)}
-                            style={{ 
-                              background: hasReacted ? 'rgba(255,183,3,0.2)' : '#222',
-                              border: hasReacted ? '1px solid var(--primary)' : '1px solid #333',
-                              borderRadius: '12px',
-                              padding: '2px 6px',
-                              fontSize: '0.8rem',
-                              color: '#fff',
-                              cursor: 'pointer',
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: '4px'
-                            }}
-                          >
-                            <span>{emoji}</span>
-                            <span style={{ fontSize: '0.7rem' }}>{uids.length}</span>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  )}
 
                   {/* Emoji Picker Popup */}
                   {showEmojiPicker === msg.id && (
@@ -299,7 +322,7 @@ export default function RomansChat() {
                       position: 'absolute', 
                       bottom: '100%', 
                       right: isSelf ? 0 : 'auto', 
-                      left: isSelf ? 'auto' : 0, 
+                      left: isSelf ? 'auto' : '44px', 
                       background: '#222', 
                       border: '1px solid #444', 
                       borderRadius: '24px', 

@@ -4,9 +4,10 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { auth, db } from '@/lib/firebase';
+import { auth, db, storage } from '@/lib/firebase';
 import { onAuthStateChanged, updateProfile } from 'firebase/auth';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
 export default function RomanExchangeProfile() {
   const router = useRouter();
@@ -18,6 +19,8 @@ export default function RomanExchangeProfile() {
   const [location, setLocation] = useState('Downtown');
   const [emailVisible, setEmailVisible] = useState(false);
   const [locationVisible, setLocationVisible] = useState(true);
+  const [photoURL, setPhotoURL] = useState('');
+  const [photoFile, setPhotoFile] = useState(null);
 
   // Auth & Data Listener
   useEffect(() => {
@@ -36,6 +39,9 @@ export default function RomanExchangeProfile() {
           if (data.location) setLocation(data.location);
           if (data.emailVisible !== undefined) setEmailVisible(data.emailVisible);
           if (data.locationVisible !== undefined) setLocationVisible(data.locationVisible);
+          if (data.photoURL) setPhotoURL(data.photoURL);
+        } else if (currentUser.photoURL) {
+          setPhotoURL(currentUser.photoURL);
         }
       }
       setLoading(false);
@@ -49,7 +55,16 @@ export default function RomanExchangeProfile() {
     setSaving(true);
     
     try {
-      await updateProfile(user, { displayName });
+      let newPhotoURL = photoURL;
+      
+      // Upload new photo if selected
+      if (photoFile) {
+        const fileRef = ref(storage, `avatars/${user.uid}`);
+        await uploadBytes(fileRef, photoFile);
+        newPhotoURL = await getDownloadURL(fileRef);
+      }
+
+      await updateProfile(user, { displayName, photoURL: newPhotoURL });
       
       await setDoc(doc(db, 'users', user.uid), {
         displayName,
@@ -57,9 +72,12 @@ export default function RomanExchangeProfile() {
         location,
         emailVisible,
         locationVisible,
+        photoURL: newPhotoURL,
         updatedAt: new Date().toISOString()
       }, { merge: true });
       
+      setPhotoURL(newPhotoURL);
+      setPhotoFile(null);
       alert('Profile updated successfully!');
     } catch (error) {
       console.error("Error updating profile:", error);
@@ -102,6 +120,48 @@ export default function RomanExchangeProfile() {
           gap: '1.5rem'
         }}
       >
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
+          <div style={{ 
+            width: '100px', 
+            height: '100px', 
+            borderRadius: '50%', 
+            background: '#222', 
+            border: '2px solid var(--primary)',
+            overflow: 'hidden',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            backgroundImage: photoFile ? `url(${URL.createObjectURL(photoFile)})` : (photoURL ? `url(${photoURL})` : 'none'),
+            backgroundSize: 'cover',
+            backgroundPosition: 'center'
+          }}>
+            {!photoFile && !photoURL && <span style={{ color: '#666', fontSize: '2rem' }}>?</span>}
+          </div>
+          
+          <label style={{
+            background: '#222',
+            color: '#d4d4d8',
+            padding: '0.5rem 1rem',
+            borderRadius: '4px',
+            cursor: 'pointer',
+            fontSize: '0.9rem',
+            border: '1px solid #444',
+            fontFamily: 'var(--font-space)'
+          }}>
+            Change Profile Picture
+            <input 
+              type="file" 
+              accept="image/*" 
+              style={{ display: 'none' }}
+              onChange={(e) => {
+                if (e.target.files[0]) {
+                  setPhotoFile(e.target.files[0]);
+                }
+              }}
+            />
+          </label>
+        </div>
+
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
           <label style={{ color: '#a1a1aa', fontFamily: 'var(--font-space)', fontSize: '0.9rem' }}>Display Name</label>
           <input 

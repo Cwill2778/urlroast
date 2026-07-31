@@ -26,6 +26,7 @@ export default function JobsBoard({ user }) {
       await addDoc(collection(db, 'jobs'), {
         uid: user.uid,
         displayName: user.displayName || 'Roman',
+        photoURL: user.photoURL || null,
         budget,
         details,
         timeline,
@@ -69,7 +70,27 @@ export default function JobsBoard({ user }) {
 
         {jobs.map(job => (
           <motion.div key={job.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} style={{ background: '#1a1a1a', padding: '1rem', borderRadius: '8px', border: '1px solid #333' }}>
-            <div style={{ color: 'var(--primary)', fontWeight: 'bold', fontFamily: 'var(--font-oswald)', marginBottom: '0.5rem' }}>{job.displayName}</div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
+              <div style={{
+                width: '32px',
+                height: '32px',
+                borderRadius: '50%',
+                background: '#222',
+                flexShrink: 0,
+                overflow: 'hidden',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                border: '1px solid #444',
+                backgroundImage: job.photoURL ? `url(${job.photoURL})` : 'none',
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+              }}>
+                {!job.photoURL && <span style={{ color: '#666', fontSize: '0.8rem', fontWeight: 'bold' }}>{job.displayName.charAt(0).toUpperCase()}</span>}
+              </div>
+              <div style={{ color: 'var(--primary)', fontWeight: 'bold', fontFamily: 'var(--font-oswald)' }}>{job.displayName}</div>
+            </div>
+            
             <div style={{ color: '#fff', fontSize: '0.9rem', marginBottom: '0.5rem', lineHeight: '1.4' }}>{job.details}</div>
             <div style={{ display: 'flex', gap: '1rem', fontSize: '0.8rem', color: '#888', fontFamily: 'var(--font-space)' }}>
               <span>💰 {job.budget}</span>
