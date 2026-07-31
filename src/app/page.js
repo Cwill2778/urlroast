@@ -19,32 +19,33 @@ export default function Portfolio() {
   return (
     <main style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '4rem 2rem 0 2rem' }}>
       {/* Top Announcement Banner */}
-      <motion.div
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        style={{
-          width: '100%',
-          maxWidth: '1200px',
-          margin: '0 auto 2rem auto',
-          background: 'linear-gradient(90deg, rgba(255, 183, 3, 0.1) 0%, rgba(255, 183, 3, 0.02) 100%)',
-          border: '1px solid rgba(255, 183, 3, 0.2)',
-          borderLeft: '4px solid var(--primary)',
-          borderRadius: '8px',
-          padding: '1.5rem 2rem',
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '0.5rem'
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--primary)', fontWeight: 'bold', fontSize: '0.9rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-          <span style={{ display: 'inline-block', width: '8px', height: '8px', background: 'var(--primary)', borderRadius: '50%', boxShadow: '0 0 10px var(--primary)' }}></span>
-          Live Community Build
-        </div>
-        <p style={{ color: '#d4d4d8', lineHeight: '1.6', fontSize: '1.05rem', margin: 0 }}>
-          Currently accepting feature suggestions, likes, and dislikes of community platforms during our live community build of <strong>The Roman Exchange</strong>, a 100% free community connecting platform. No advertisements, ever. No paywalls, ever. My promise to you. Because unlike the others, this will be built by a Roman, for Romans.
-        </p>
-      </motion.div>
+      <Link href="/romans-chat" style={{ textDecoration: 'none', width: '100%', maxWidth: '1200px', margin: '0 auto 2rem auto', display: 'block' }}>
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          whileHover={{ scale: 1.01, boxShadow: '0 10px 30px rgba(255, 183, 3, 0.1)' }}
+          style={{
+            background: 'linear-gradient(90deg, rgba(255, 183, 3, 0.1) 0%, rgba(255, 183, 3, 0.02) 100%)',
+            border: '1px solid rgba(255, 183, 3, 0.2)',
+            borderLeft: '4px solid var(--primary)',
+            borderRadius: '8px',
+            padding: '1.5rem 2rem',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '0.5rem',
+            cursor: 'pointer'
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--primary)', fontWeight: 'bold', fontSize: '0.9rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+            <span style={{ display: 'inline-block', width: '8px', height: '8px', background: 'var(--primary)', borderRadius: '50%', boxShadow: '0 0 10px var(--primary)' }}></span>
+            Live Community Build
+          </div>
+          <p style={{ color: '#d4d4d8', lineHeight: '1.6', fontSize: '1.05rem', margin: 0 }}>
+            Currently accepting feature suggestions, likes, and dislikes of community platforms during our live community build of <strong>The Roman Exchange</strong>, a 100% free community connecting platform. No advertisements, ever. No paywalls, ever. My promise to you. Because unlike the others, this will be built by a Roman, for Romans.
+          </p>
+        </motion.div>
+      </Link>
 
       {/* Hero Section */}
       <section style={{ textAlign: 'center', maxWidth: '800px', margin: '4rem auto 4rem auto', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
