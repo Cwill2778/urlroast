@@ -3,6 +3,16 @@ import "./globals.css";
 export const metadata = {
   title: "Cronan Technology | Premium Digital Agency",
   description: "Cronan Technology specializes in high-performance web applications, AI automation, and conversion rate optimization for modern businesses.",
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "Roman Exchange",
+  },
+};
+
+export const viewport = {
+  themeColor: "#ffb703",
 };
 
 import { Oswald, Space_Mono } from 'next/font/google';
