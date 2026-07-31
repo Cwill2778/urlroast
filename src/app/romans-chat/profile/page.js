@@ -1,19 +1,81 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { auth, db } from '@/lib/firebase';
+import { onAuthStateChanged, updateProfile } from 'firebase/auth';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 
-export default function RomansProfile() {
-  const [displayName, setDisplayName] = useState('New Roman');
+export default function RomanExchangeProfile() {
+  const router = useRouter();
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  
+  const [displayName, setDisplayName] = useState('');
   const [location, setLocation] = useState('Downtown');
   const [emailVisible, setEmailVisible] = useState(false);
   const [locationVisible, setLocationVisible] = useState(true);
 
-  const handleSave = (e) => {
+  // Auth & Data Listener
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+      if (!currentUser) {
+        router.push('/romans-chat/login');
+      } else {
+        setUser(currentUser);
+        setDisplayName(currentUser.displayName || '');
+        
+        // Fetch extra profile data
+        const docRef = doc(db, 'users', currentUser.uid);
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+          if (data.location) setLocation(data.location);
+          if (data.emailVisible !== undefined) setEmailVisible(data.emailVisible);
+          if (data.locationVisible !== undefined) setLocationVisible(data.locationVisible);
+        }
+      }
+      setLoading(false);
+    });
+    return () => unsubscribe();
+  }, [router]);
+
+  const handleSave = async (e) => {
     e.preventDefault();
-    alert('Profile saved! (This is a mockup)');
+    if (!user) return;
+    setSaving(true);
+    
+    try {
+      await updateProfile(user, { displayName });
+      
+      await setDoc(doc(db, 'users', user.uid), {
+        displayName,
+        email: user.email,
+        location,
+        emailVisible,
+        locationVisible,
+        updatedAt: new Date().toISOString()
+      }, { merge: true });
+      
+      alert('Profile updated successfully!');
+    } catch (error) {
+      console.error("Error updating profile:", error);
+      alert('Error updating profile.');
+    } finally {
+      setSaving(false);
+    }
   };
+
+  if (loading) {
+    return (
+      <div style={{ height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#0a0a0a', color: 'var(--primary)', fontFamily: 'var(--font-space)' }}>
+        LOADING PROFILE...
+      </div>
+    );
+  }
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', background: '#0a0a0a', fontFamily: 'var(--font-oswald)', padding: '2rem' }}>
@@ -92,6 +154,7 @@ export default function RomansProfile() {
 
         <button 
           type="submit"
+          disabled={saving}
           style={{
             background: 'var(--primary)',
             color: '#000',
@@ -100,10 +163,11 @@ export default function RomansProfile() {
             borderRadius: '8px',
             fontWeight: 'bold',
             marginTop: '1rem',
-            cursor: 'pointer'
+            cursor: saving ? 'not-allowed' : 'pointer',
+            opacity: saving ? 0.7 : 1
           }}
         >
-          Save Profile
+          {saving ? 'Saving...' : 'Save Profile'}
         </button>
       </motion.form>
     </div>
