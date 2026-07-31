@@ -80,6 +80,7 @@ export default function TerminalOverlay() {
           printLine("  github     - Open external repository");
           printLine("  ls         - List system directories");
           printLine("  theme      - Change OS accent color (usage: theme [amber/green/blue/white])");
+          printLine("  audio      - Control ambient audio (usage: audio [play|stop|track|volume <0-100>])");
           printLine("  whoami     - Display current user identification");
           printLine("  date       - Display system time");
           printLine("  coffee     - Execute caffeine protocol");
@@ -166,6 +167,29 @@ export default function TerminalOverlay() {
             printLine("Theme updated to: Industrial Amber");
           } else {
             printLine("Usage: theme [white/amber/green/blue]");
+          }
+          break;
+        case 'audio':
+        case 'music':
+          if (args[1] === 'play') {
+             window.dispatchEvent(new CustomEvent('audio-control', { detail: { action: 'play' } }));
+             printLine("Playing ambient audio track...");
+          } else if (args[1] === 'stop' || args[1] === 'pause') {
+             window.dispatchEvent(new CustomEvent('audio-control', { detail: { action: 'stop' } }));
+             printLine("Stopping ambient audio track...");
+          } else if (args[1] === 'info' || args[1] === 'track') {
+             printLine("Track: Industrial Ambient Mix (Original)");
+             printLine("Status: Managed by Audio Daemon");
+          } else if (args[1] === 'volume' || args[1] === 'vol') {
+             const vol = parseFloat(args[2]);
+             if (!isNaN(vol) && vol >= 0 && vol <= 100) {
+               window.dispatchEvent(new CustomEvent('audio-control', { detail: { action: 'volume', value: vol / 100 } }));
+               printLine(`Volume set to ${vol}%`);
+             } else {
+               printLine("Usage: audio volume [0-100]");
+             }
+          } else {
+             printLine("Usage: audio [play | stop | track | volume <0-100>]");
           }
           break;
         case 'sudo':

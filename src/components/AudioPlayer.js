@@ -16,6 +16,30 @@ export default function AudioPlayer({ src = '/audio.mp3' }) {
     }
   }, [volume, isMuted]);
 
+  useEffect(() => {
+    const handleAudioControl = (e) => {
+      const { action, value } = e.detail;
+      if (action === 'play') {
+        if (audioRef.current) {
+          audioRef.current.play().catch(err => console.warn('Audio playback failed:', err));
+          setIsPlaying(true);
+        }
+      } else if (action === 'stop') {
+        if (audioRef.current) {
+          audioRef.current.pause();
+          audioRef.current.currentTime = 0;
+          setIsPlaying(false);
+        }
+      } else if (action === 'volume') {
+        setVolume(value);
+        if (value > 0) setIsMuted(false);
+      }
+    };
+    
+    window.addEventListener('audio-control', handleAudioControl);
+    return () => window.removeEventListener('audio-control', handleAudioControl);
+  }, []);
+
   const handlePlay = () => {
     if (!audioRef.current) return;
     audioRef.current.play().catch(e => console.warn('Audio playback failed:', e));
