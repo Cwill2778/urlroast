@@ -233,6 +233,32 @@ export default function Portfolio() {
                 Cronan Technology is currently taking on new projects for Q3. Navigate to the Contact portal to initiate communication.
               </p>
             </div>
+            
+            {/* Announcement 4 (Donation) */}
+            <div style={{ background: 'rgba(255,183,3,0.05)', padding: '1rem', borderRadius: '8px', borderLeft: '2px solid var(--primary)' }}>
+              <div style={{ fontSize: '0.75rem', color: 'var(--primary)', marginBottom: '0.5rem', fontFamily: 'var(--font-space)', letterSpacing: '0.1em' }}>SUPPORT THE DEV</div>
+              <h3 style={{ fontSize: '1.05rem', color: '#fff', marginBottom: '0.5rem' }}>Keep Roman Exchange Free</h3>
+              <p style={{ fontSize: '0.9rem', color: '#a1a1aa', lineHeight: '1.6', marginBottom: '1rem' }}>
+                If you love using The Roman Exchange and want to support its continued development by a solo Software Engineering student, consider buying me a coffee!
+              </p>
+              <a 
+                href="https://pay.cronantech.com/b/bJeeVeg1udUCgBQaTA2Ry03" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                style={{ 
+                  display: 'inline-block',
+                  background: 'var(--primary)', 
+                  color: '#000', 
+                  padding: '0.5rem 1rem',
+                  borderRadius: '4px',
+                  textDecoration: 'none', 
+                  fontWeight: 'bold',
+                  fontSize: '0.85rem'
+                }}
+              >
+                ☕ Donate via Stripe
+              </a>
+            </div>
           </div>
         </motion.aside>
       </div>

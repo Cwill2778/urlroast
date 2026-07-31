@@ -153,7 +153,24 @@ export default function RomansChat() {
           </h1>
           <div style={{ fontSize: '0.8rem', color: '#888', fontFamily: 'var(--font-space)' }}>Community Hub</div>
         </div>
-        <div style={{ display: 'flex', gap: '1rem' }}>
+        <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+          <a 
+            href="https://pay.cronantech.com/b/bJeeVeg1udUCgBQaTA2Ry03" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            style={{ 
+              background: 'rgba(255, 183, 3, 0.1)', 
+              color: 'var(--primary)', 
+              border: '1px solid rgba(255, 183, 3, 0.3)',
+              padding: '0.25rem 0.75rem',
+              borderRadius: '16px',
+              textDecoration: 'none', 
+              fontSize: '0.8rem',
+              fontFamily: 'var(--font-space)'
+            }}
+          >
+            ☕ Support Dev
+          </a>
           <Link href="/romans-chat/profile" style={{ color: '#d4d4d8', textDecoration: 'none', fontSize: '0.9rem' }}>Profile</Link>
           <button onClick={() => auth.signOut()} style={{ background: 'none', border: 'none', color: '#ef4444', fontSize: '0.9rem', cursor: 'pointer', fontFamily: 'inherit' }}>
             Sign Out
