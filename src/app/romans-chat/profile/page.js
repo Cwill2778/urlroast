@@ -26,7 +26,7 @@ export default function RomanExchangeProfile() {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       if (!currentUser) {
-        router.push('/romans-chat/login');
+        router.push('/login');
       } else {
         setUser(currentUser);
         setDisplayName(currentUser.displayName || '');
@@ -100,7 +100,7 @@ export default function RomanExchangeProfile() {
       
       <header style={{ marginBottom: '2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <h1 style={{ fontSize: '1.5rem', color: '#fff', margin: 0 }}>Edit Profile</h1>
-        <Link href="/romans-chat" style={{ color: 'var(--primary)', textDecoration: 'none', fontFamily: 'var(--font-space)' }}>← Back to Chat</Link>
+        <Link href="/" style={{ color: 'var(--primary)', textDecoration: 'none', fontFamily: 'var(--font-space)' }}>← Back to Chat</Link>
       </header>
 
       <motion.form 

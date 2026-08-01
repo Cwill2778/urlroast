@@ -19,7 +19,7 @@ export default function Portfolio() {
   return (
     <main style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '4rem 2rem 0 2rem' }}>
       {/* Top Announcement Banner */}
-      <Link href="/romans-chat" style={{ textDecoration: 'none', width: '100%', maxWidth: '1200px', margin: '0 auto 2rem auto', display: 'block' }}>
+      <Link href="https://romanexchange.cronantech.com" style={{ textDecoration: 'none', width: '100%', maxWidth: '1200px', margin: '0 auto 2rem auto', display: 'block' }}>
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -224,7 +224,8 @@ export default function Portfolio() {
                 A brand new case study has been deployed to the Software & AI silo showcasing an SEO-optimized full stack deployment.
               </p>
             </div>
-            
+
+
             {/* Announcement 3 */}
             <div style={{ background: 'rgba(255,255,255,0.02)', padding: '1rem', borderRadius: '8px', borderLeft: '2px solid #555' }}>
               <div style={{ fontSize: '0.75rem', color: '#888', marginBottom: '0.5rem', fontFamily: 'var(--font-space)', letterSpacing: '0.1em' }}>SUMMER 2026</div>

@@ -34,7 +34,7 @@ export default function RomansChat() {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       if (!currentUser) {
-        router.push('/romans-chat/login');
+        router.push('/login');
       } else {
         setUser(currentUser);
       }
@@ -175,7 +175,7 @@ export default function RomansChat() {
           >
             ☕ Support Dev
           </a>
-          <Link href="/romans-chat/profile" style={{ color: '#d4d4d8', textDecoration: 'none', fontSize: '0.9rem' }}>Profile</Link>
+          <Link href="/profile" style={{ color: '#d4d4d8', textDecoration: 'none', fontSize: '0.9rem' }}>Profile</Link>
           <button onClick={() => auth.signOut()} style={{ background: 'none', border: 'none', color: '#ef4444', fontSize: '0.9rem', cursor: 'pointer', fontFamily: 'inherit' }}>
             Sign Out
           </button>

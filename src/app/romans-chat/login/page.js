@@ -25,7 +25,7 @@ export default function Login() {
     try {
       if (isLogin) {
         await signInWithEmailAndPassword(auth, email, password);
-        router.push('/romans-chat');
+        router.push('/');
       } else {
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
         const user = userCredential.user;
@@ -42,7 +42,7 @@ export default function Login() {
           createdAt: new Date().toISOString()
         });
 
-        router.push('/romans-chat');
+        router.push('/');
       }
     } catch (err) {
       setError(err.message);
@@ -144,7 +144,7 @@ export default function Login() {
         </div>
         
         <div style={{ marginTop: '1rem', textAlign: 'center' }}>
-          <Link href="/" style={{ color: '#666', textDecoration: 'none', fontSize: '0.8rem', fontFamily: 'var(--font-space)' }}>← Return Home</Link>
+          <Link href="https://cronantech.com" style={{ color: '#666', textDecoration: 'none', fontSize: '0.8rem', fontFamily: 'var(--font-space)' }}>← Return to CronanTech</Link>
         </div>
       </div>
     </div>

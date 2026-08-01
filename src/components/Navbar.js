@@ -83,7 +83,21 @@ export default function Navbar() {
 
           <Link href="/about" style={{ color: '#d4d4d8', textDecoration: 'none', fontSize: '0.95rem' }}>About</Link>
           <Link href="/contact" style={{ color: '#d4d4d8', textDecoration: 'none', fontSize: '0.95rem' }}>Contact</Link>
-          <Link href="/romans-chat" style={{ color: 'var(--primary)', textDecoration: 'none', fontSize: '0.95rem', fontWeight: 'bold' }}>Roman Exchange</Link>
+          <Link href="https://romanexchange.cronantech.com" className="nav-link" style={{ 
+            color: 'var(--primary)',
+            textDecoration: 'none',
+            fontSize: '0.9rem',
+            fontFamily: 'var(--font-oswald)',
+            textTransform: 'uppercase',
+            letterSpacing: '0.05em',
+            fontWeight: 'bold',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.5rem'
+          }}>
+            <span style={{ display: 'inline-block', width: '6px', height: '6px', background: 'var(--primary)', borderRadius: '50%' }}></span>
+            Roman Exchange
+          </Link>
           
           <div className="desktop-only" style={{ width: '1px', height: '20px', background: 'var(--border)' }}></div>
 
@@ -124,7 +138,7 @@ export default function Navbar() {
             <Link href="/work/support" onClick={() => setMobileMenuOpen(false)} style={{ color: '#fff', textDecoration: 'none' }}>Work: Support</Link>
             <Link href="/about" onClick={() => setMobileMenuOpen(false)} style={{ color: '#fff', textDecoration: 'none' }}>About</Link>
             <Link href="/contact" onClick={() => setMobileMenuOpen(false)} style={{ color: '#fff', textDecoration: 'none' }}>Contact</Link>
-            <Link href="/romans-chat" onClick={() => setMobileMenuOpen(false)} style={{ color: 'var(--primary)', textDecoration: 'none', fontWeight: 'bold' }}>Roman Exchange</Link>
+            <Link href="https://romanexchange.cronantech.com" onClick={() => setMobileMenuOpen(false)} style={{ color: 'var(--primary)', textDecoration: 'none', fontWeight: 'bold' }}>Roman Exchange</Link>
           </div>
         </div>
       )}
