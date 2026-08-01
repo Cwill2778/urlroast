@@ -2,7 +2,7 @@
 
 :root {
   --background: #050505; /* Absolute black / very dark */
-  --foreground: #f0f0f0; /* Off-white for high legibility */
+  --foreground: #ffffff; /* Bright white for high legibility */
   --primary: #ffb703; /* Neon Amber / Gold */
   --primary-glow: rgba(255, 183, 3, 0.4);
   --surface: #121212; /* Deep steel */
@@ -11,7 +11,9 @@
   --glass-border: rgba(255, 183, 3, 0.2); /* Subtle gold border on glass */
 }
 
+/* Smooth transition for theme colors and font size */
 html {
+  transition: --primary 0.3s ease, font-size 0.3s ease;
   height: 100%;
 }
 

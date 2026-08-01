@@ -3,7 +3,7 @@
 import { useState, useEffect, use } from 'react';
 import { db } from '@/lib/firebase';
 import { doc, getDoc, collection, query, where, getDocs } from 'firebase/firestore';
-import { MapPin, MessageSquare, ArrowLeft } from 'lucide-react';
+import { MapPin, MessageSquare, ArrowLeft, Phone, Calendar, Mail } from 'lucide-react';
 import Link from 'next/link';
 
 export default function UserProfile({ params }) {
@@ -137,16 +137,54 @@ export default function UserProfile({ params }) {
           <div style={{ textAlign: 'center', zIndex: 1 }}>
             <h2 style={{ fontSize: '2rem', margin: 0, letterSpacing: '0.05em' }}>{profileUser?.displayName}</h2>
             
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '1.5rem', marginTop: '1rem', color: '#aaa', fontFamily: 'var(--font-space)', fontSize: '0.9rem' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <MapPin size={16} color="var(--primary)" />
-                {profileUser?.location || 'Location Unknown'}
-              </div>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '1.5rem', marginTop: '1rem', color: '#aaa', fontFamily: 'var(--font-space)', fontSize: '0.9rem', flexWrap: 'wrap' }}>
+              
+              {/* Location (if visible) */}
+              {profileUser?.locationVisible !== false && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <MapPin size={16} color="var(--primary)" />
+                  {profileUser?.location || 'Location Unknown'}
+                </div>
+              )}
+
+              {/* Email (if visible) */}
+              {profileUser?.emailVisible && profileUser?.email && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <Mail size={16} color="var(--primary)" />
+                  <a href={`mailto:${profileUser.email}`} style={{ textDecoration: 'underline' }}>{profileUser.email}</a>
+                </div>
+              )}
+
+              {/* Phone (if visible) */}
+              {profileUser?.phoneVisible && profileUser?.phone && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <Phone size={16} color="var(--primary)" />
+                  <a href={`tel:${profileUser.phone}`} style={{ textDecoration: 'underline' }}>{profileUser.phone}</a>
+                </div>
+              )}
+
+              {/* Birthday (if visible) */}
+              {profileUser?.birthdayVisible && profileUser?.birthday && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <Calendar size={16} color="var(--primary)" />
+                  {new Date(profileUser.birthday).toLocaleDateString()}
+                </div>
+              )}
+
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                 <MessageSquare size={16} color="var(--primary)" />
                 {userPosts.length} Posts
               </div>
             </div>
+
+            {/* Bio */}
+            {profileUser?.bio && (
+              <div style={{ marginTop: '1.5rem', padding: '1rem', background: 'rgba(255,255,255,0.05)', borderRadius: '8px', border: '1px solid #333', textAlign: 'left', maxWidth: '600px', margin: '1.5rem auto 0 auto' }}>
+                <h4 style={{ color: 'var(--primary)', margin: '0 0 0.5rem 0', fontSize: '0.8rem', fontFamily: 'var(--font-space)' }}>ABOUT ME</h4>
+                <p style={{ color: '#d4d4d8', margin: 0, lineHeight: 1.5, whiteSpace: 'pre-wrap' }}>{profileUser.bio}</p>
+              </div>
+            )}
+            
           </div>
         </div>
 
