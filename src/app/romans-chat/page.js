@@ -136,14 +136,14 @@ export default function RomansChat() {
 
   if (loading) {
     return (
-      <div style={{ height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#0a0a0a', color: 'var(--primary)', fontFamily: 'var(--font-space)' }}>
+      <div style={{ position: 'fixed', top: '73px', bottom: 0, left: 0, right: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#0a0a0a', color: 'var(--primary)', fontFamily: 'var(--font-space)', zIndex: 10 }}>
         INITIALIZING ROMAN EXCHANGE...
       </div>
     );
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', background: '#0a0a0a', fontFamily: 'var(--font-oswald)', overflow: 'hidden' }}>
+    <div style={{ position: 'fixed', top: '73px', bottom: 0, left: 0, right: 0, display: 'flex', flexDirection: 'column', background: '#0a0a0a', fontFamily: 'var(--font-oswald)', overflow: 'hidden', zIndex: 10 }}>
       {/* Global Header */}
       <header style={{ padding: '1rem', borderBottom: '1px solid #222', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#111', zIndex: 10, flexShrink: 0 }}>
         <div>
@@ -438,6 +438,7 @@ export default function RomansChat() {
         background: '#111', 
         borderTop: '1px solid #333',
         padding: '0.75rem',
+        paddingBottom: 'calc(0.75rem + env(safe-area-inset-bottom))',
         flexShrink: 0
       }}>
         <button 
