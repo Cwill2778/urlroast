@@ -83,15 +83,8 @@ export default function Navbar() {
 
           <Link href="/about" style={{ color: '#d4d4d8', textDecoration: 'none', fontSize: '0.95rem' }}>About</Link>
           <Link href="/contact" style={{ color: '#d4d4d8', textDecoration: 'none', fontSize: '0.95rem' }}>Contact</Link>
+          <Link href="/romans-chat" style={{ color: 'var(--primary)', textDecoration: 'none', fontSize: '0.95rem', fontWeight: 'bold' }}>Roman Exchange</Link>
           
-          <div className="desktop-only" style={{ display: 'flex', gap: '1.5rem', alignItems: 'center' }}>
-            <a href="tel:7068448193" style={{ color: '#d4d4d8', textDecoration: 'none', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '0.4rem', fontFamily: 'var(--font-space)' }}>
-              <Phone size={14} /> (706) 844-8193
-            </a>
-            <a href="mailto:c.brianna@cronantech.com" style={{ color: '#d4d4d8', textDecoration: 'none', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '0.4rem', fontFamily: 'var(--font-space)' }}>
-              <Mail size={14} /> c.brianna@cronantech.com
-            </a>
-          </div>
           <div className="desktop-only" style={{ width: '1px', height: '20px', background: 'var(--border)' }}></div>
 
           {/* Utilities */}
@@ -131,14 +124,7 @@ export default function Navbar() {
             <Link href="/work/support" onClick={() => setMobileMenuOpen(false)} style={{ color: '#fff', textDecoration: 'none' }}>Work: Support</Link>
             <Link href="/about" onClick={() => setMobileMenuOpen(false)} style={{ color: '#fff', textDecoration: 'none' }}>About</Link>
             <Link href="/contact" onClick={() => setMobileMenuOpen(false)} style={{ color: '#fff', textDecoration: 'none' }}>Contact</Link>
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginTop: 'auto', borderTop: '1px solid #333', paddingTop: '2rem' }}>
-            <a href="tel:7068448193" style={{ color: '#d4d4d8', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <Phone size={18} /> (706) 844-8193
-            </a>
-            <a href="mailto:c.brianna@cronantech.com" style={{ color: '#d4d4d8', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <Mail size={18} /> c.brianna@cronantech.com
-            </a>
+            <Link href="/romans-chat" onClick={() => setMobileMenuOpen(false)} style={{ color: 'var(--primary)', textDecoration: 'none', fontWeight: 'bold' }}>Roman Exchange</Link>
           </div>
         </div>
       )}
