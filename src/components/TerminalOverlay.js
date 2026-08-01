@@ -3,6 +3,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { Terminal as TerminalIcon, X, Maximize2, Minimize2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { db } from '@/lib/firebase';
+import { collection, query, where, getDocs } from 'firebase/firestore';
 
 export default function TerminalOverlay() {
   const [isOpen, setIsOpen] = useState(false);
@@ -13,6 +15,7 @@ export default function TerminalOverlay() {
     { type: 'system', content: 'Type "help" for a list of available commands.' }
   ]);
   const [input, setInput] = useState('');
+  const [commandState, setCommandState] = useState(null);
   const inputRef = useRef(null);
   const bottomRef = useRef(null);
 
@@ -69,9 +72,42 @@ export default function TerminalOverlay() {
         }
       };
 
+      if (commandState === 'awaiting_search') {
+         setCommandState(null);
+         printLine("Searching databases for: " + fullCmd + "...");
+         
+         // Run async fetch immediately
+         (async () => {
+           try {
+              let q = query(collection(db, 'users'), where('displayName', '==', fullCmd));
+              let snap = await getDocs(q);
+              
+              if (snap.empty) {
+                 q = query(collection(db, 'users'), where('email', '==', fullCmd));
+                 snap = await getDocs(q);
+              }
+              
+              if (snap.empty) {
+                 printLine("User not found.");
+              } else {
+                 const userData = snap.docs[0].data();
+                 const uid = snap.docs[0].id;
+                 printLine(`User Found: ${userData.displayName} (${userData.location || 'Location Unknown'})`);
+                 setTimeout(() => {
+                    setHistory(prev => [...prev, { type: 'html', content: `<a href='/user/${uid}' style='color: var(--primary); text-decoration: underline;'>[ View Profile ]</a>` }]);
+                 }, 400);
+              }
+           } catch(err) {
+              printLine("Error accessing database: " + err.message);
+           }
+         })();
+         return;
+      }
+
       switch (baseCmd) {
         case 'help':
           printLine("Available commands:");
+          printLine("  search     - Locate a user in the database");
           printLine("  about      - Display system architect profile");
           printLine("  skills     - List active technical dependencies");
           printLine("  projects   - Fetch deployment logs");
@@ -202,6 +238,10 @@ export default function TerminalOverlay() {
             printLine("Access denied. This incident will be reported.");
           }
           break;
+        case 'search':
+          printLine("What user would you like to search for? (Enter Name or Email)");
+          setCommandState('awaiting_search');
+          break;
         case 'clear':
           setHistory([]);
           break;
@@ -220,19 +260,21 @@ export default function TerminalOverlay() {
       <AnimatePresence>
         {isOpen && (
           <motion.div
-            initial={{ opacity: 0, y: 100 }}
+            initial={{ opacity: 0, y: 50 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 100 }}
+            exit={{ opacity: 0, y: 50 }}
             transition={{ type: 'spring', damping: 20, stiffness: 300 }}
             style={{
               position: 'fixed',
-              bottom: isMaximized ? 0 : '1rem',
-              left: isMaximized ? 0 : '50%',
-              transform: isMaximized ? 'none' : 'translateX(-50%)',
+              top: 0,
+              bottom: 0,
+              left: 0,
+              right: 0,
+              margin: 'auto',
               width: isMaximized ? '100vw' : '90vw',
               maxWidth: isMaximized ? 'none' : '800px',
               height: isMaximized ? '100vh' : '500px',
-              background: 'rgba(10, 10, 10, 0.95)',
+              background: 'rgba(10, 10, 10, 0.75)',
               backdropFilter: 'blur(10px)',
               border: isMaximized ? 'none' : '1px solid var(--primary)',
               borderRadius: isMaximized ? 0 : '12px',
