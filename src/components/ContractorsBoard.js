@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 
 export default function ContractorsBoard({ user }) {
   const [contractors, setContractors] = useState([]);
+  const [errorMsg, setErrorMsg] = useState(null);
   const [showForm, setShowForm] = useState(false);
   
   const [availability, setAvailability] = useState('');
@@ -16,6 +17,9 @@ export default function ContractorsBoard({ user }) {
     const q = query(collection(db, 'contractors'), orderBy('timestamp', 'desc'));
     const unsubscribe = onSnapshot(q, (snapshot) => {
       setContractors(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+    }, (error) => {
+      console.error("Contractors board listener error:", error);
+      setErrorMsg(error.message);
     });
     return () => unsubscribe();
   }, []);
@@ -68,7 +72,13 @@ export default function ContractorsBoard({ user }) {
           </form>
         )}
 
-        {contractors.length === 0 && !showForm && (
+        {errorMsg && (
+          <div style={{ color: '#ef4444', textAlign: 'center', marginTop: '1rem', padding: '1rem', background: 'rgba(239, 68, 68, 0.1)', borderRadius: '8px', fontSize: '0.9rem' }}>
+            ⚠️ {errorMsg}
+          </div>
+        )}
+
+        {contractors.length === 0 && !showForm && !errorMsg && (
           <div style={{ color: '#666', textAlign: 'center', marginTop: '2rem', fontFamily: 'var(--font-space)' }}>No contractors listed yet.</div>
         )}
 

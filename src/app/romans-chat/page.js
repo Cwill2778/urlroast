@@ -15,6 +15,7 @@ export default function RomansChat() {
   const router = useRouter();
   const [user, setUser] = useState(null);
   const [messages, setMessages] = useState([]);
+  const [errorMsg, setErrorMsg] = useState(null);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(true);
   const messagesEndRef = useRef(null);
@@ -67,6 +68,9 @@ export default function RomansChat() {
         }
       });
       setMessages(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+    }, (error) => {
+      console.error("Firestore listener error:", error);
+      setErrorMsg(error.message);
     });
     return () => unsubscribe();
   }, [user]);
@@ -202,7 +206,14 @@ export default function RomansChat() {
         }}>
           {/* Message List */}
           <div style={{ flex: 1, overflowY: 'auto', padding: '1rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-            {messages.length === 0 && (
+            {errorMsg && (
+               <div style={{ textAlign: 'center', color: '#ef4444', marginTop: '2rem', fontFamily: 'var(--font-space)', padding: '1rem', background: 'rgba(239, 68, 68, 0.1)', borderRadius: '8px' }}>
+                 ⚠️ <strong>Database Error:</strong> {errorMsg}
+                 <br /><br />
+                 If this says "Missing or insufficient permissions", you need to update your Firestore Security Rules in the Firebase Console to allow read/write access.
+               </div>
+            )}
+            {messages.length === 0 && !errorMsg && (
                <div style={{ textAlign: 'center', color: '#666', marginTop: '2rem', fontFamily: 'var(--font-space)' }}>
                  No messages yet. Be the first to speak!
                </div>

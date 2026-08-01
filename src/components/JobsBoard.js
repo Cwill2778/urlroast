@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 
 export default function JobsBoard({ user }) {
   const [jobs, setJobs] = useState([]);
+  const [errorMsg, setErrorMsg] = useState(null);
   const [showForm, setShowForm] = useState(false);
   
   const [budget, setBudget] = useState('');
@@ -15,6 +16,9 @@ export default function JobsBoard({ user }) {
     const q = query(collection(db, 'jobs'), orderBy('timestamp', 'desc'));
     const unsubscribe = onSnapshot(q, (snapshot) => {
       setJobs(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+    }, (error) => {
+      console.error("Jobs board listener error:", error);
+      setErrorMsg(error.message);
     });
     return () => unsubscribe();
   }, []);
@@ -64,7 +68,13 @@ export default function JobsBoard({ user }) {
           </form>
         )}
 
-        {jobs.length === 0 && !showForm && (
+        {errorMsg && (
+          <div style={{ color: '#ef4444', textAlign: 'center', marginTop: '1rem', padding: '1rem', background: 'rgba(239, 68, 68, 0.1)', borderRadius: '8px', fontSize: '0.9rem' }}>
+            ⚠️ {errorMsg}
+          </div>
+        )}
+
+        {jobs.length === 0 && !showForm && !errorMsg && (
           <div style={{ color: '#666', textAlign: 'center', marginTop: '2rem', fontFamily: 'var(--font-space)' }}>No projects posted yet.</div>
         )}
 
