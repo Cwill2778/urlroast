@@ -4,10 +4,11 @@ import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { auth, db } from '@/lib/firebase';
+import { auth, db, storage } from '@/lib/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import { collection, query, orderBy, onSnapshot, addDoc, updateDoc, doc, serverTimestamp, arrayUnion, arrayRemove, getDoc } from 'firebase/firestore';
-import { Briefcase, MessageSquare, Wrench, X, CornerUpLeft, Smile } from 'lucide-react';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { Briefcase, MessageSquare, Wrench, X, CornerUpLeft, Smile, Image as ImageIcon } from 'lucide-react';
 import JobsBoard from '@/components/JobsBoard';
 import ContractorsBoard from '@/components/ContractorsBoard';
 
@@ -18,7 +19,10 @@ export default function RomansChat() {
   const [userLocation, setUserLocation] = useState(null);
   const [errorMsg, setErrorMsg] = useState(null);
   const [input, setInput] = useState('');
+  const [imageFile, setImageFile] = useState(null);
+  const [uploading, setUploading] = useState(false);
   const [loading, setLoading] = useState(true);
+  const fileInputRef = useRef(null);
 
   // Layout State for Mobile
   const [activeTab, setActiveTab] = useState('chat'); // 'jobs', 'chat', 'contractors'
@@ -92,26 +96,43 @@ export default function RomansChat() {
 
   const handleSend = async (e) => {
     e.preventDefault();
-    if (!input.trim() || !user) return;
+    if ((!input.trim() && !imageFile) || !user || uploading) return;
     
+    setUploading(true);
     const text = input;
     const replyData = replyingTo ? { ...replyingTo } : null;
-    
-    setInput('');
-    setReplyingTo(null);
+    let imageUrl = null;
     
     try {
+      // 1. Upload Image if exists
+      if (imageFile) {
+        const fileRef = ref(storage, `exchange_images/${Date.now()}_${imageFile.name}`);
+        const snapshot = await uploadBytes(fileRef, imageFile);
+        imageUrl = await getDownloadURL(snapshot.ref);
+      }
+
+      // 2. Save Message
       await addDoc(collection(db, 'messages'), {
         author: user.displayName || 'Roman',
         uid: user.uid,
         photoURL: user.photoURL || null,
         location: userLocation || null,
         text: text,
+        imageUrl: imageUrl,
         replyTo: replyData,
         timestamp: serverTimestamp(),
       });
+      
+      // 3. Reset State
+      setInput('');
+      setImageFile(null);
+      setReplyingTo(null);
+      
     } catch (error) {
       console.error("Error sending message:", error);
+      setErrorMsg("Failed to post: " + error.message);
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -215,12 +236,30 @@ export default function RomansChat() {
                 <button onClick={() => setReplyingTo(null)} style={{ background: 'none', border: 'none', color: '#888', cursor: 'pointer' }}><X size={14} /></button>
               </div>
             )}
-            <form onSubmit={handleSend} style={{ display: 'flex', gap: '0.5rem' }}>
+            <form onSubmit={handleSend} style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+              <input 
+                type="file" 
+                accept="image/*" 
+                ref={fileInputRef} 
+                style={{ display: 'none' }} 
+                onChange={(e) => {
+                  if (e.target.files && e.target.files[0]) setImageFile(e.target.files[0]);
+                }} 
+              />
+              <button 
+                type="button" 
+                onClick={() => fileInputRef.current?.click()}
+                style={{ background: 'none', border: 'none', color: imageFile ? 'var(--primary)' : '#888', cursor: 'pointer', padding: '0.5rem' }}
+                title="Attach Image"
+              >
+                <ImageIcon size={24} />
+              </button>
+              
               <input 
                 type="text" 
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                placeholder="Create a post... use @name to tag" 
+                placeholder={imageFile ? `Attached: ${imageFile.name} (Add description...)` : "Create a post... use @name to tag"} 
                 style={{ 
                   flex: 1, 
                   background: '#0a0a0a', 
@@ -234,17 +273,19 @@ export default function RomansChat() {
               />
               <button 
                 type="submit" 
+                disabled={uploading}
                 style={{ 
-                  background: 'var(--primary)', 
+                  background: uploading ? '#444' : 'var(--primary)', 
                   color: '#000', 
                   border: 'none', 
                   padding: '0 1.5rem', 
                   borderRadius: replyingTo ? '0 0 24px 0' : '24px', 
                   fontWeight: 'bold',
-                  cursor: 'pointer'
+                  cursor: uploading ? 'not-allowed' : 'pointer',
+                  height: '42px'
                 }}
               >
-                Post
+                {uploading ? 'Posting...' : 'Post'}
               </button>
             </form>
           </div>
@@ -370,6 +411,13 @@ export default function RomansChat() {
                     }}>
                       {renderMessageText(msg.text)}
                     </div>
+                    
+                    {/* Attached Image */}
+                    {msg.imageUrl && (
+                      <div style={{ marginTop: '0.75rem', borderRadius: '8px', overflow: 'hidden', border: '1px solid #333' }}>
+                        <img src={msg.imageUrl} alt="Attached to post" style={{ width: '100%', maxHeight: '400px', objectFit: 'cover', display: 'block' }} />
+                      </div>
+                    )}
 
                     {/* Reactions Badge */}
                     {msg.reactions && Object.keys(msg.reactions).length > 0 && (
