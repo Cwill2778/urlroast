@@ -13,7 +13,7 @@ export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [displayName, setDisplayName] = useState('');
-  const [location, setLocation] = useState('Downtown');
+  const [location, setLocation] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -75,10 +75,12 @@ export default function Login() {
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                 <label style={{ color: '#a1a1aa', fontFamily: 'var(--font-space)', fontSize: '0.9rem' }}>Side of Town</label>
                 <select 
+                  required
                   value={location}
                   onChange={(e) => setLocation(e.target.value)}
                   style={{ padding: '0.75rem', borderRadius: '8px', border: '1px solid #444', background: '#0a0a0a', color: '#fff' }}
                 >
+                  <option value="" disabled>Select your community...</option>
                   <option value="West Rome">West Rome</option>
                   <option value="East Rome">East Rome</option>
                   <option value="North Rome">North Rome</option>
