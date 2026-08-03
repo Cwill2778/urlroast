@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { auth, db } from '@/lib/firebase';
-import { createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile } from 'firebase/auth';
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile, signInAnonymously } from 'firebase/auth';
 import { doc, setDoc } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -25,7 +25,7 @@ export default function Login() {
     try {
       if (isLogin) {
         await signInWithEmailAndPassword(auth, email, password);
-        router.push('/');
+        router.push('/romans-chat');
       } else {
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
         const user = userCredential.user;
@@ -42,8 +42,21 @@ export default function Login() {
           createdAt: new Date().toISOString()
         });
 
-        router.push('/');
+        router.push('/romans-chat');
       }
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGuestLogin = async () => {
+    setLoading(true);
+    setError('');
+    try {
+      await signInAnonymously(auth);
+      router.push('/romans-chat');
     } catch (err) {
       setError(err.message);
     } finally {
@@ -144,8 +157,33 @@ export default function Login() {
             {isLogin ? 'Sign up' : 'Sign in'}
           </button>
         </div>
+
+        <div style={{ marginTop: '1.5rem', textAlign: 'center', borderTop: '1px solid #333', paddingTop: '1.5rem' }}>
+          <p style={{ color: '#888', fontSize: '0.85rem', marginBottom: '1rem', fontFamily: 'var(--font-space)' }}>Want to just look around?</p>
+          <button 
+            type="button"
+            onClick={handleGuestLogin}
+            disabled={loading}
+            style={{
+              background: 'transparent',
+              color: '#d4d4d8',
+              border: '1px solid #444',
+              padding: '0.75rem 1.5rem',
+              borderRadius: '8px',
+              cursor: loading ? 'not-allowed' : 'pointer',
+              fontFamily: 'var(--font-space)',
+              fontSize: '0.9rem',
+              width: '100%',
+              transition: 'all 0.2s'
+            }}
+            onMouseOver={(e) => { e.currentTarget.style.background = '#222'; e.currentTarget.style.borderColor = 'var(--primary)'; e.currentTarget.style.color = 'var(--primary)'; }}
+            onMouseOut={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.borderColor = '#444'; e.currentTarget.style.color = '#d4d4d8'; }}
+          >
+            Continue as Guest
+          </button>
+        </div>
         
-        <div style={{ marginTop: '1rem', textAlign: 'center' }}>
+        <div style={{ marginTop: '1.5rem', textAlign: 'center' }}>
           <Link href="https://cronantech.com" style={{ color: '#666', textDecoration: 'none', fontSize: '0.8rem', fontFamily: 'var(--font-space)' }}>← Return to CronanTech</Link>
         </div>
       </div>

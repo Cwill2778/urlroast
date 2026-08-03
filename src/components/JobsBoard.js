@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { collection, query, orderBy, onSnapshot, addDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, query, orderBy, onSnapshot, addDoc, serverTimestamp, doc, deleteDoc, updateDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { motion } from 'framer-motion';
 
@@ -11,6 +11,11 @@ export default function JobsBoard({ user }) {
   const [budget, setBudget] = useState('');
   const [details, setDetails] = useState('');
   const [timeline, setTimeline] = useState('');
+  
+  const [editingId, setEditingId] = useState(null);
+  const [editBudget, setEditBudget] = useState('');
+  const [editDetails, setEditDetails] = useState('');
+  const [editTimeline, setEditTimeline] = useState('');
 
   useEffect(() => {
     const q = query(collection(db, 'jobs'), orderBy('timestamp', 'desc'));
@@ -42,6 +47,39 @@ export default function JobsBoard({ user }) {
       setTimeline('');
     } catch (error) {
       console.error("Error adding job:", error);
+      setErrorMsg("Failed to add project: " + error.message);
+    }
+  };
+
+  const handleDelete = async (jobId) => {
+    if (!window.confirm("Are you sure you want to delete this project?")) return;
+    try {
+      await deleteDoc(doc(db, 'jobs', jobId));
+    } catch (error) {
+      console.error("Error deleting job:", error);
+      setErrorMsg("Failed to delete project: " + error.message);
+    }
+  };
+
+  const startEditing = (job) => {
+    setEditingId(job.id);
+    setEditBudget(job.budget);
+    setEditDetails(job.details);
+    setEditTimeline(job.timeline);
+  };
+
+  const handleUpdate = async (e, jobId) => {
+    e.preventDefault();
+    try {
+      await updateDoc(doc(db, 'jobs', jobId), {
+        budget: editBudget,
+        details: editDetails,
+        timeline: editTimeline,
+      });
+      setEditingId(null);
+    } catch (error) {
+      console.error("Error updating job:", error);
+      setErrorMsg("Failed to update project: " + error.message);
     }
   };
 
@@ -80,32 +118,55 @@ export default function JobsBoard({ user }) {
 
         {jobs.map(job => (
           <motion.div key={job.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} style={{ background: '#1a1a1a', padding: '1rem', borderRadius: '8px', border: '1px solid #333' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
-              <div style={{
-                width: '32px',
-                height: '32px',
-                borderRadius: '50%',
-                background: '#222',
-                flexShrink: 0,
-                overflow: 'hidden',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                border: '1px solid #444',
-                backgroundImage: job.photoURL ? `url(${job.photoURL})` : 'none',
-                backgroundSize: 'cover',
-                backgroundPosition: 'center',
-              }}>
-                {!job.photoURL && <span style={{ color: '#666', fontSize: '0.8rem', fontWeight: 'bold' }}>{job.displayName.charAt(0).toUpperCase()}</span>}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                <div style={{
+                  width: '32px',
+                  height: '32px',
+                  borderRadius: '50%',
+                  background: '#222',
+                  flexShrink: 0,
+                  overflow: 'hidden',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  border: '1px solid #444',
+                  backgroundImage: job.photoURL ? `url(${job.photoURL})` : 'none',
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center',
+                }}>
+                  {!job.photoURL && <span style={{ color: '#666', fontSize: '0.8rem', fontWeight: 'bold' }}>{(job.displayName || 'R').charAt(0).toUpperCase()}</span>}
+                </div>
+                <div style={{ color: 'var(--primary)', fontWeight: 'bold', fontFamily: 'var(--font-oswald)' }}>{job.displayName}</div>
               </div>
-              <div style={{ color: 'var(--primary)', fontWeight: 'bold', fontFamily: 'var(--font-oswald)' }}>{job.displayName}</div>
+              
+              {user && user.uid === job.uid && !user.isAnonymous && (
+                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                  <button onClick={() => startEditing(job)} style={{ background: 'none', border: 'none', color: '#888', cursor: 'pointer', fontSize: '0.8rem', textDecoration: 'underline' }}>Edit</button>
+                  <button onClick={() => handleDelete(job.id)} style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '0.8rem', textDecoration: 'underline' }}>Delete</button>
+                </div>
+              )}
             </div>
             
-            <div style={{ color: '#fff', fontSize: '0.9rem', marginBottom: '0.5rem', lineHeight: '1.4' }}>{job.details}</div>
-            <div style={{ display: 'flex', gap: '1rem', fontSize: '0.8rem', color: '#888', fontFamily: 'var(--font-space)' }}>
-              <span>💰 {job.budget}</span>
-              <span>📅 {job.timeline}</span>
-            </div>
+            {editingId === job.id ? (
+              <form onSubmit={(e) => handleUpdate(e, job.id)} style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginTop: '0.5rem' }}>
+                <input placeholder="Budget (e.g. $500)" value={editBudget} onChange={e => setEditBudget(e.target.value)} required style={{ padding: '0.5rem', background: '#0a0a0a', border: '1px solid #333', color: '#fff', borderRadius: '4px' }} />
+                <textarea placeholder="Project Details" value={editDetails} onChange={e => setEditDetails(e.target.value)} required style={{ padding: '0.5rem', background: '#0a0a0a', border: '1px solid #333', color: '#fff', borderRadius: '4px', minHeight: '80px', fontFamily: 'inherit' }} />
+                <input placeholder="Timeline (e.g. Next week)" value={editTimeline} onChange={e => setEditTimeline(e.target.value)} required style={{ padding: '0.5rem', background: '#0a0a0a', border: '1px solid #333', color: '#fff', borderRadius: '4px' }} />
+                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                  <button type="submit" style={{ background: 'var(--primary)', color: '#000', border: 'none', padding: '0.4rem 1rem', borderRadius: '4px', fontWeight: 'bold', cursor: 'pointer' }}>Save</button>
+                  <button type="button" onClick={() => setEditingId(null)} style={{ background: 'transparent', color: '#fff', border: '1px solid #444', padding: '0.4rem 1rem', borderRadius: '4px', cursor: 'pointer' }}>Cancel</button>
+                </div>
+              </form>
+            ) : (
+              <>
+                <div style={{ color: '#fff', fontSize: '0.9rem', marginBottom: '0.5rem', lineHeight: '1.4' }}>{job.details}</div>
+                <div style={{ display: 'flex', gap: '1rem', fontSize: '0.8rem', color: '#888', fontFamily: 'var(--font-space)' }}>
+                  <span>💰 {job.budget}</span>
+                  <span>📅 {job.timeline}</span>
+                </div>
+              </>
+            )}
           </motion.div>
         ))}
       </div>

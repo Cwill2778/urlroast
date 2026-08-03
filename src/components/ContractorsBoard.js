@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { collection, query, orderBy, onSnapshot, addDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, query, orderBy, onSnapshot, addDoc, serverTimestamp, doc, deleteDoc, updateDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { motion } from 'framer-motion';
 
@@ -12,6 +12,12 @@ export default function ContractorsBoard({ user }) {
   const [specialty, setSpecialty] = useState('');
   const [phone, setPhone] = useState('');
   const [comments, setComments] = useState('');
+
+  const [editingId, setEditingId] = useState(null);
+  const [editAvailability, setEditAvailability] = useState('');
+  const [editSpecialty, setEditSpecialty] = useState('');
+  const [editPhone, setEditPhone] = useState('');
+  const [editComments, setEditComments] = useState('');
 
   useEffect(() => {
     const q = query(collection(db, 'contractors'), orderBy('timestamp', 'desc'));
@@ -45,6 +51,41 @@ export default function ContractorsBoard({ user }) {
       setComments('');
     } catch (error) {
       console.error("Error adding contractor:", error);
+      setErrorMsg("Failed to add listing: " + error.message);
+    }
+  };
+
+  const handleDelete = async (contractorId) => {
+    if (!window.confirm("Are you sure you want to delete this listing?")) return;
+    try {
+      await deleteDoc(doc(db, 'contractors', contractorId));
+    } catch (error) {
+      console.error("Error deleting contractor:", error);
+      setErrorMsg("Failed to delete listing: " + error.message);
+    }
+  };
+
+  const startEditing = (contractor) => {
+    setEditingId(contractor.id);
+    setEditSpecialty(contractor.specialty);
+    setEditAvailability(contractor.availability);
+    setEditPhone(contractor.phone || '');
+    setEditComments(contractor.comments || '');
+  };
+
+  const handleUpdate = async (e, contractorId) => {
+    e.preventDefault();
+    try {
+      await updateDoc(doc(db, 'contractors', contractorId), {
+        specialty: editSpecialty,
+        availability: editAvailability,
+        phone: editPhone,
+        comments: editComments,
+      });
+      setEditingId(null);
+    } catch (error) {
+      console.error("Error updating contractor:", error);
+      setErrorMsg("Failed to update listing: " + error.message);
     }
   };
 
@@ -84,35 +125,57 @@ export default function ContractorsBoard({ user }) {
 
         {contractors.map(c => (
           <motion.div key={c.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} style={{ background: '#1a1a1a', padding: '1rem', borderRadius: '8px', border: '1px solid #333' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.25rem' }}>
-              <div style={{
-                width: '32px',
-                height: '32px',
-                borderRadius: '50%',
-                background: '#222',
-                flexShrink: 0,
-                overflow: 'hidden',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                border: '1px solid #444',
-                backgroundImage: c.photoURL ? `url(${c.photoURL})` : 'none',
-                backgroundSize: 'cover',
-                backgroundPosition: 'center',
-              }}>
-                {!c.photoURL && <span style={{ color: '#666', fontSize: '0.8rem', fontWeight: 'bold' }}>{c.displayName.charAt(0).toUpperCase()}</span>}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                <div style={{
+                  width: '32px',
+                  height: '32px',
+                  borderRadius: '50%',
+                  background: '#222',
+                  flexShrink: 0,
+                  overflow: 'hidden',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  border: '1px solid #444',
+                  backgroundImage: c.photoURL ? `url(${c.photoURL})` : 'none',
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center',
+                }}>
+                  {!c.photoURL && <span style={{ color: '#666', fontSize: '0.8rem', fontWeight: 'bold' }}>{(c.displayName || 'R').charAt(0).toUpperCase()}</span>}
+                </div>
+                <div style={{ color: 'var(--primary)', fontWeight: 'bold', fontFamily: 'var(--font-oswald)' }}>{c.displayName}</div>
               </div>
-              <div style={{ color: 'var(--primary)', fontWeight: 'bold', fontFamily: 'var(--font-oswald)' }}>{c.displayName}</div>
+              
+              {user && user.uid === c.uid && !user.isAnonymous && (
+                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                  <button onClick={() => startEditing(c)} style={{ background: 'none', border: 'none', color: '#888', cursor: 'pointer', fontSize: '0.8rem', textDecoration: 'underline' }}>Edit</button>
+                  <button onClick={() => handleDelete(c.id)} style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', fontSize: '0.8rem', textDecoration: 'underline' }}>Delete</button>
+                </div>
+              )}
             </div>
             
-            <div style={{ color: '#aaa', fontSize: '0.8rem', fontFamily: 'var(--font-space)', marginBottom: '0.5rem' }}>{c.specialty}</div>
-            
-            {c.comments && <div style={{ color: '#fff', fontSize: '0.9rem', marginBottom: '0.5rem', lineHeight: '1.4' }}>{c.comments}</div>}
-            
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', fontSize: '0.8rem', color: '#888', fontFamily: 'var(--font-space)' }}>
-              <span>🕒 {c.availability}</span>
-              {c.phone && <span>📞 {c.phone}</span>}
-            </div>
+            {editingId === c.id ? (
+              <form onSubmit={(e) => handleUpdate(e, c.id)} style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginTop: '0.5rem' }}>
+                <input placeholder="Specialty (e.g. Plumbing, HVAC)" value={editSpecialty} onChange={e => setEditSpecialty(e.target.value)} required style={{ padding: '0.5rem', background: '#0a0a0a', border: '1px solid #333', color: '#fff', borderRadius: '4px' }} />
+                <input placeholder="Availability (Days & Times)" value={editAvailability} onChange={e => setEditAvailability(e.target.value)} required style={{ padding: '0.5rem', background: '#0a0a0a', border: '1px solid #333', color: '#fff', borderRadius: '4px' }} />
+                <input placeholder="Phone Number (Optional)" value={editPhone} onChange={e => setEditPhone(e.target.value)} style={{ padding: '0.5rem', background: '#0a0a0a', border: '1px solid #333', color: '#fff', borderRadius: '4px' }} />
+                <textarea placeholder="Comments / Description" value={editComments} onChange={e => setEditComments(e.target.value)} style={{ padding: '0.5rem', background: '#0a0a0a', border: '1px solid #333', color: '#fff', borderRadius: '4px', minHeight: '60px', fontFamily: 'inherit' }} />
+                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                  <button type="submit" style={{ background: 'var(--primary)', color: '#000', border: 'none', padding: '0.4rem 1rem', borderRadius: '4px', fontWeight: 'bold', cursor: 'pointer' }}>Save</button>
+                  <button type="button" onClick={() => setEditingId(null)} style={{ background: 'transparent', color: '#fff', border: '1px solid #444', padding: '0.4rem 1rem', borderRadius: '4px', cursor: 'pointer' }}>Cancel</button>
+                </div>
+              </form>
+            ) : (
+              <>
+                <div style={{ color: '#aaa', fontSize: '0.8rem', fontFamily: 'var(--font-space)', marginBottom: '0.5rem' }}>{c.specialty}</div>
+                {c.comments && <div style={{ color: '#fff', fontSize: '0.9rem', marginBottom: '0.5rem', lineHeight: '1.4' }}>{c.comments}</div>}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', fontSize: '0.8rem', color: '#888', fontFamily: 'var(--font-space)' }}>
+                  <span>🕒 {c.availability}</span>
+                  {c.phone && <span>📞 {c.phone}</span>}
+                </div>
+              </>
+            )}
           </motion.div>
         ))}
       </div>

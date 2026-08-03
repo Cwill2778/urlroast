@@ -1,20 +1,32 @@
 'use client';
 
 import { useState, useEffect, use } from 'react';
-import { db } from '@/lib/firebase';
-import { doc, getDoc, collection, query, where, getDocs } from 'firebase/firestore';
-import { MapPin, MessageSquare, ArrowLeft, Phone, Calendar, Mail } from 'lucide-react';
+import { auth, db } from '@/lib/firebase';
+import { doc, getDoc, collection, query, where, getDocs, addDoc, serverTimestamp } from 'firebase/firestore';
+import { onAuthStateChanged } from 'firebase/auth';
+import { MapPin, MessageSquare, ArrowLeft, Phone, Calendar, Mail, Lock, Send } from 'lucide-react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 export default function UserProfile({ params }) {
   // Unwrapping params using React.use() to satisfy Next.js 16+ params rules
   const unwrappedParams = use(params);
   const id = unwrappedParams.id;
+  const router = useRouter();
   
   const [profileUser, setProfileUser] = useState(null);
   const [userPosts, setUserPosts] = useState([]);
+  const [viewer, setViewer] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [startingChat, setStartingChat] = useState(false);
   const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setViewer(currentUser);
+    });
+    return () => unsubscribe();
+  }, []);
 
   useEffect(() => {
     const fetchUserAndPosts = async () => {
@@ -58,6 +70,45 @@ export default function UserProfile({ params }) {
     
     if (id) fetchUserAndPosts();
   }, [id]);
+
+  const handleStartChat = async () => {
+    if (!viewer || viewer.isAnonymous || !profileUser || viewer.uid === profileUser.id) return;
+    
+    setStartingChat(true);
+    try {
+      // Check if chat already exists
+      const q = query(
+        collection(db, 'direct_chats'),
+        where('participants', 'array-contains', viewer.uid)
+      );
+      
+      const snapshot = await getDocs(q);
+      let existingChatId = null;
+      
+      for (const doc of snapshot.docs) {
+        const data = doc.data();
+        if (data.participants.includes(profileUser.id)) {
+          existingChatId = doc.id;
+          break;
+        }
+      }
+      
+      if (existingChatId) {
+        router.push(`/romans-chat/messages/${existingChatId}`);
+      } else {
+        // Create new chat
+        const docRef = await addDoc(collection(db, 'direct_chats'), {
+          participants: [viewer.uid, profileUser.id],
+          lastMessage: '',
+          updatedAt: serverTimestamp()
+        });
+        router.push(`/romans-chat/messages/${docRef.id}`);
+      }
+    } catch (e) {
+      console.error("Error starting chat:", e);
+      setStartingChat(false);
+    }
+  };
 
   const renderMessageText = (text) => {
     if (!text) return null;
@@ -131,7 +182,7 @@ export default function UserProfile({ params }) {
             fontWeight: 'bold',
             zIndex: 1
           }}>
-            {profileUser?.displayName?.charAt(0).toUpperCase()}
+            {(profileUser?.displayName || 'R').charAt(0).toUpperCase()}
           </div>
           
           <div style={{ textAlign: 'center', zIndex: 1 }}>
@@ -167,7 +218,7 @@ export default function UserProfile({ params }) {
               {profileUser?.birthdayVisible && profileUser?.birthday && (
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                   <Calendar size={16} color="var(--primary)" />
-                  {new Date(profileUser.birthday).toLocaleDateString()}
+                  {new Date(profileUser.birthday + 'T12:00:00Z').toLocaleDateString()}
                 </div>
               )}
 
@@ -176,6 +227,33 @@ export default function UserProfile({ params }) {
                 {userPosts.length} Posts
               </div>
             </div>
+
+            {/* Message Action */}
+            {viewer && !viewer.isAnonymous && viewer.uid !== profileUser?.id && (
+              <div style={{ marginTop: '1.5rem' }}>
+                <button 
+                  onClick={handleStartChat}
+                  disabled={startingChat}
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    background: 'var(--primary)',
+                    color: '#000',
+                    border: 'none',
+                    padding: '0.75rem 2rem',
+                    borderRadius: '24px',
+                    fontWeight: 'bold',
+                    cursor: startingChat ? 'not-allowed' : 'pointer',
+                    fontFamily: 'var(--font-space)',
+                    opacity: startingChat ? 0.7 : 1
+                  }}
+                >
+                  <Send size={16} />
+                  {startingChat ? 'Connecting...' : 'Secure Transmission'}
+                </button>
+              </div>
+            )}
 
             {/* Bio */}
             {profileUser?.bio && (

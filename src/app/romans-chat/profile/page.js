@@ -52,7 +52,7 @@ export default function RomanExchangeProfile() {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       if (!currentUser) {
-        router.push('/login');
+        router.push('/romans-chat/login');
       } else {
         setUser(currentUser);
         setDisplayName(currentUser.displayName || '');
@@ -157,6 +157,8 @@ export default function RomanExchangeProfile() {
       </div>
     );
   }
+
+  if (!user) return null;
 
   return (
     <div style={{ minHeight: '100vh', background: '#0a0a0a', fontFamily: 'var(--font-oswald)' }}>

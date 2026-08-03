@@ -8,9 +8,11 @@ import { auth, db, storage } from '@/lib/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import { collection, query, orderBy, onSnapshot, addDoc, updateDoc, doc, serverTimestamp, arrayUnion, arrayRemove, getDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { Briefcase, MessageSquare, Wrench, X, CornerUpLeft, Smile, Image as ImageIcon } from 'lucide-react';
-import JobsBoard from '@/components/JobsBoard';
-import ContractorsBoard from '@/components/ContractorsBoard';
+import { Briefcase, MessageSquare, Wrench, X, CornerUpLeft, Smile, Image as ImageIcon, User, Home, LogOut, Search, Bell, UserPlus, Map, Building, Plus } from 'lucide-react';
+
+import TrailsPortal from '@/components/TrailsPortal';
+import RenovationsBoard from '@/components/RenovationsBoard';
+import ExpandableText from '@/components/ExpandableText';
 
 export default function RomansChat() {
   const router = useRouter();
@@ -22,63 +24,73 @@ export default function RomansChat() {
   const [imageFile, setImageFile] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [showGuestPopup, setShowGuestPopup] = useState(true);
   const fileInputRef = useRef(null);
 
-  // Layout State for Mobile
-  const [activeTab, setActiveTab] = useState('chat'); // 'jobs', 'chat', 'contractors'
+  // Layout State
+  const [activeTab, setActiveTab] = useState('feed'); // 'feed', 'trails', 'renovations'
   
   // Chat Features State
   const [replyingTo, setReplyingTo] = useState(null);
-  const [showEmojiPicker, setShowEmojiPicker] = useState(null); // stores message ID
+  const [showEmojiPicker, setShowEmojiPicker] = useState(null);
+  const [showPostModal, setShowPostModal] = useState(false);
 
   // Emojis for quick reactions
   const EMOJIS = ['👍', '❤️', '😂', '🔥', '👏'];
 
-  // Auth Listener
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       if (!currentUser) {
-        router.push('/login');
+        setLoading(false);
+        router.push('/romans-chat/login');
       } else {
         setUser(currentUser);
         try {
-          const docSnap = await getDoc(doc(db, 'users', currentUser.uid));
-          if (docSnap.exists() && docSnap.data().location) {
-            setUserLocation(docSnap.data().location);
+          if (!currentUser.isAnonymous) {
+            const docSnap = await getDoc(doc(db, 'users', currentUser.uid));
+            if (docSnap.exists() && docSnap.data().location) {
+              setUserLocation(docSnap.data().location);
+            }
           }
         } catch(e) {
           console.error(e);
         }
+        setLoading(false);
       }
-      setLoading(false);
     });
     return () => unsubscribe();
   }, [router]);
 
-  // Firestore Messages Listener
   useEffect(() => {
     if (!user) return;
+    
+    // Create a local variable within the effect to track initial load
+    let initialLoad = true;
+    
     const q = query(collection(db, 'messages'), orderBy('timestamp', 'desc'));
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      snapshot.docChanges().forEach((change) => {
-        if (change.type === 'added') {
-          const newMsg = change.doc.data();
-          // Trigger notification if it's not the user's own message
-          if (newMsg.uid !== user.uid) {
-            const isMentioned = newMsg.text && newMsg.text.includes(`@${user.displayName}`);
-            const isReplied = newMsg.replyTo && newMsg.replyTo.author === user.displayName;
-            
-            if (isMentioned || isReplied) {
-              if (Notification.permission === 'granted') {
-                new Notification('Roman Exchange', {
-                  body: `${newMsg.author}: ${newMsg.text}`,
-                  icon: '/icon-192x192.png'
-                });
+      if (!initialLoad) {
+        snapshot.docChanges().forEach((change) => {
+          if (change.type === 'added') {
+            const newMsg = change.doc.data();
+            if (newMsg.uid !== user.uid) {
+              const isMentioned = newMsg.text && newMsg.text.includes(`@${user.displayName}`);
+              const isReplied = newMsg.replyTo && newMsg.replyTo.author === user.displayName;
+              
+              if (isMentioned || isReplied) {
+                if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
+                  new Notification('Rome Connect', {
+                    body: `${newMsg.author}: ${newMsg.text}`
+                  });
+                }
               }
             }
           }
-        }
-      });
+        });
+      } else {
+        initialLoad = false;
+      }
+      
       setMessages(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
     }, (error) => {
       console.error("Firestore listener error:", error);
@@ -87,16 +99,25 @@ export default function RomansChat() {
     return () => unsubscribe();
   }, [user]);
 
-  // Request Notification Permission
   useEffect(() => {
-    if ('Notification' in window && Notification.permission !== 'granted' && Notification.permission !== 'denied') {
+    if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission !== 'granted' && Notification.permission !== 'denied') {
       Notification.requestPermission();
     }
   }, []);
 
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 1024);
+    };
+    checkMobile(); // Check on initial load
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
   const handleSend = async (e) => {
     e.preventDefault();
-    if ((!input.trim() && !imageFile) || !user || uploading) return;
+    if ((!input.trim() && !imageFile) || !user || uploading || user.isAnonymous) return;
     
     setUploading(true);
     const text = input;
@@ -104,14 +125,12 @@ export default function RomansChat() {
     let imageUrl = null;
     
     try {
-      // 1. Upload Image if exists
       if (imageFile) {
         const fileRef = ref(storage, `exchange_images/${Date.now()}_${imageFile.name}`);
         const snapshot = await uploadBytes(fileRef, imageFile);
         imageUrl = await getDownloadURL(snapshot.ref);
       }
 
-      // 2. Save Message
       await addDoc(collection(db, 'messages'), {
         author: user.displayName || 'Roman',
         uid: user.uid,
@@ -123,10 +142,10 @@ export default function RomansChat() {
         timestamp: serverTimestamp(),
       });
       
-      // 3. Reset State
       setInput('');
       setImageFile(null);
       setReplyingTo(null);
+      setShowPostModal(false);
       
     } catch (error) {
       console.error("Error sending message:", error);
@@ -137,7 +156,7 @@ export default function RomansChat() {
   };
 
   const handleReaction = async (msgId, emoji, hasReacted) => {
-    if (!user) return;
+    if (!user || user.isAnonymous) return;
     const msgRef = doc(db, 'messages', msgId);
     try {
       await updateDoc(msgRef, {
@@ -163,140 +182,222 @@ export default function RomansChat() {
   if (loading) {
     return (
       <div style={{ position: 'fixed', top: '73px', bottom: 0, left: 0, right: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#0a0a0a', color: 'var(--primary)', fontFamily: 'var(--font-space)', zIndex: 10 }}>
-        INITIALIZING ROMAN EXCHANGE...
+        INITIALIZING ROME CONNECT...
       </div>
     );
   }
 
+  const isGuest = !user || user.isAnonymous;
+
   return (
     <div style={{ position: 'fixed', top: '73px', bottom: 0, left: 0, right: 0, display: 'flex', flexDirection: 'column', background: '#0a0a0a', fontFamily: 'var(--font-oswald)', overflow: 'hidden', zIndex: 10 }}>
-      {/* Global Header */}
-      <header style={{ padding: '1rem', borderBottom: '1px solid #222', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#111', zIndex: 10, flexShrink: 0 }}>
-        <div>
-          <h1 style={{ fontSize: '1.2rem', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#fff' }}>
-            <span style={{ display: 'inline-block', width: '8px', height: '8px', background: 'var(--primary)', borderRadius: '50%', boxShadow: '0 0 10px var(--primary)' }}></span>
-            Roman Exchange News Feed
-          </h1>
-          <div style={{ fontSize: '0.8rem', color: '#888', fontFamily: 'var(--font-space)' }}>Community Hub</div>
-        </div>
-        <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-          <a 
-            href="https://pay.cronantech.com/b/bJeeVeg1udUCgBQaTA2Ry03" 
-            target="_blank" 
-            rel="noopener noreferrer"
-            style={{ 
-              background: 'rgba(255, 183, 3, 0.1)', 
-              color: 'var(--primary)', 
-              border: '1px solid rgba(255, 183, 3, 0.3)',
-              padding: '0.25rem 0.75rem',
-              borderRadius: '16px',
-              textDecoration: 'none', 
-              fontSize: '0.8rem',
-              fontFamily: 'var(--font-space)'
-            }}
+
+      <AnimatePresence>
+        {isGuest && showGuestPopup && (
+          <motion.div 
+            key="guest-popup"
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(8px)', zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}
           >
-            ☕ Support Dev
-          </a>
-          <Link href="/profile" style={{ color: '#d4d4d8', textDecoration: 'none', fontSize: '0.9rem' }}>Profile</Link>
-          <button onClick={() => auth.signOut()} style={{ background: 'none', border: 'none', color: '#ef4444', fontSize: '0.9rem', cursor: 'pointer', fontFamily: 'inherit' }}>
-            Sign Out
-          </button>
-        </div>
-      </header>
+            <motion.div 
+              initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }}
+              style={{ background: '#111', border: '1px solid #333', borderRadius: '16px', padding: '2.5rem', width: '100%', maxWidth: '400px', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)', textAlign: 'center' }}
+            >
+              <h2 style={{ color: 'var(--primary)', margin: '0 0 1rem 0', fontSize: '1.5rem' }}>Welcome, Guest!</h2>
+              <p style={{ color: '#d4d4d8', fontFamily: 'var(--font-space)', fontSize: '0.95rem', lineHeight: 1.6, marginBottom: '2rem' }}>
+                Logging in anonymously you wont be able to post in the feed because you must be signed in. However, you can take a look around and hopefully you decide to join us here at Rome Connect.
+              </p>
+              <button 
+                onClick={() => setShowGuestPopup(false)}
+                style={{ background: 'var(--primary)', color: '#000', border: 'none', padding: '0.75rem 2rem', borderRadius: '8px', fontWeight: 'bold', fontSize: '1rem', cursor: 'pointer' }}
+              >
+                Start Exploring
+              </button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-      {/* Main 3-Column Layout */}
-      <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
+      {/* Main Professional 3-Column Layout */}
+      <div style={{ display: 'flex', flex: 1, overflow: 'hidden', maxWidth: '1400px', margin: '0 auto', width: '100%' }}>
         
-        {/* Left Column: Jobs (Desktop & Active Mobile Tab) */}
-        <div style={{ 
-          flex: 1, 
-          display: (activeTab === 'jobs' || (typeof window !== 'undefined' && window.innerWidth >= 768)) ? 'block' : 'none',
-          minWidth: '300px',
-          maxWidth: (typeof window !== 'undefined' && window.innerWidth >= 768) ? '350px' : '100%'
+        {/* LEFT SIDEBAR: Navigation Hub (Desktop Only) */}
+        <div className="desktop-sidebar-left" style={{ 
+          width: '280px', 
+          flexShrink: 0, 
+          borderRight: '1px solid #222', 
+          background: '#0a0a0a',
+          flexDirection: 'column',
+          padding: '1.5rem',
+          overflowY: 'auto'
         }}>
-          <JobsBoard user={user} />
+          {/* User Snapshot Card */}
+          {!isGuest ? (
+            <div style={{ background: '#111', border: '1px solid #333', borderRadius: '12px', padding: '1.5rem', marginBottom: '2rem', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
+              <div style={{ width: '64px', height: '64px', borderRadius: '50%', background: '#222', border: '2px solid var(--primary)', marginBottom: '1rem', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundImage: user.photoURL ? `url(${user.photoURL})` : 'none', backgroundSize: 'cover', backgroundPosition: 'center' }}>
+                {!user.photoURL && <User size={32} color="#666" />}
+              </div>
+              <h3 style={{ margin: 0, fontSize: '1.2rem', color: '#fff' }}>{user.displayName || 'Roman Citizen'}</h3>
+              <p style={{ margin: '0.25rem 0 0 0', color: 'var(--primary)', fontFamily: 'var(--font-space)', fontSize: '0.8rem' }}>{userLocation || 'Citizen'}</p>
+            </div>
+          ) : (
+            <div style={{ background: '#111', border: '1px dashed #333', borderRadius: '12px', padding: '1.5rem', marginBottom: '2rem', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
+              <User size={48} color="#666" style={{ marginBottom: '1rem' }} />
+              <h3 style={{ margin: 0, fontSize: '1.2rem', color: '#fff' }}>Guest Visitor</h3>
+              <p style={{ margin: '0.25rem 0 1rem 0', color: '#888', fontFamily: 'var(--font-space)', fontSize: '0.8rem', lineHeight: 1.5 }}>Sign in to join the conversation and connect with others.</p>
+              <Link href="/romans-chat/login" style={{ background: 'var(--primary)', color: '#000', padding: '0.5rem 1rem', borderRadius: '8px', textDecoration: 'none', fontWeight: 'bold', fontSize: '0.9rem', width: '100%' }}>Sign In</Link>
+            </div>
+          )}
+
+          {/* Navigation Links */}
+          <nav style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', marginBottom: '2rem' }}>
+            <button onClick={() => setActiveTab('feed')} style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '0.75rem 1rem', borderRadius: '8px', background: activeTab === 'feed' ? 'rgba(255,183,3,0.1)' : 'transparent', color: activeTab === 'feed' ? 'var(--primary)' : '#d4d4d8', border: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: '1rem', fontWeight: activeTab === 'feed' ? 'bold' : 'normal', transition: 'background 0.2s', textAlign: 'left' }}>
+              <Home size={20} /> Community Feed
+            </button>
+            <button onClick={() => setActiveTab('trails')} className="desktop-only-btn" style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '0.75rem 1rem', borderRadius: '8px', background: activeTab === 'trails' ? 'rgba(255,183,3,0.1)' : 'transparent', color: activeTab === 'trails' ? 'var(--primary)' : '#d4d4d8', border: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: '1rem', fontWeight: activeTab === 'trails' ? 'bold' : 'normal', transition: 'background 0.2s', textAlign: 'left' }}>
+              <Map size={20} /> Where I May Rome
+            </button>
+            <button onClick={() => setActiveTab('renovations')} className="desktop-only-btn" style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '0.75rem 1rem', borderRadius: '8px', background: activeTab === 'renovations' ? 'rgba(255,183,3,0.1)' : 'transparent', color: activeTab === 'renovations' ? 'var(--primary)' : '#d4d4d8', border: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: '1rem', fontWeight: activeTab === 'renovations' ? 'bold' : 'normal', transition: 'background 0.2s', textAlign: 'left' }}>
+              <Building size={20} /> Civic Projects
+            </button>
+            
+            <div style={{ height: '1px', background: '#222', margin: '0.5rem 0' }}></div>
+            
+            <Link href="/romans-chat/messages" style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '0.75rem 1rem', borderRadius: '8px', color: '#d4d4d8', textDecoration: 'none', transition: 'background 0.2s' }} onMouseOver={(e) => e.currentTarget.style.background = '#111'} onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}>
+              <MessageSquare size={20} /> Messages
+            </Link>
+            <Link href="/romans-chat/jobs" style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '0.75rem 1rem', borderRadius: '8px', color: '#d4d4d8', textDecoration: 'none', transition: 'background 0.2s' }} onMouseOver={(e) => e.currentTarget.style.background = '#111'} onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}>
+              <Briefcase size={20} /> Projects & Jobs
+            </Link>
+            <Link href="/romans-chat/contractors" style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '0.75rem 1rem', borderRadius: '8px', color: '#d4d4d8', textDecoration: 'none', transition: 'background 0.2s' }} onMouseOver={(e) => e.currentTarget.style.background = '#111'} onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}>
+              <Wrench size={20} /> Contractors
+            </Link>
+            <Link href="/romans-chat/profile" style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '0.75rem 1rem', borderRadius: '8px', color: '#d4d4d8', textDecoration: 'none', transition: 'background 0.2s' }} onMouseOver={(e) => e.currentTarget.style.background = '#111'} onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}>
+              <User size={20} /> Profile
+            </Link>
+            <button onClick={() => auth.signOut()} style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '0.75rem 1rem', borderRadius: '8px', color: '#ef4444', background: 'transparent', border: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: '1rem', textAlign: 'left', transition: 'background 0.2s' }} onMouseOver={(e) => e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)'} onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}>
+              <LogOut size={20} /> Leave Connect
+            </button>
+          </nav>
         </div>
 
-        {/* Center Column: Chat (Desktop & Active Mobile Tab) */}
-        <div style={{ 
-          flex: 2, 
-          display: (activeTab === 'chat' || (typeof window !== 'undefined' && window.innerWidth >= 768)) ? 'flex' : 'none',
+        {/* CENTER COLUMN: Feed & Active Mobile Tab */}
+        <div className={activeTab === 'feed' ? 'mobile-visible-flex' : 'mobile-hidden'} style={{ 
+          flex: 1, 
           flexDirection: 'column',
           background: '#0a0a0a',
           position: 'relative',
-          minWidth: '300px'
+          maxWidth: '800px', // slightly wider now that there's only 2 columns typically
+          margin: '0 auto',
+          width: '100%'
         }}>
-          {/* Input Area (Moved to Top for News Feed) */}
-          <div style={{ padding: '1rem', borderBottom: '1px solid #222', background: '#111' }}>
-            {replyingTo && (
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#1a1a1a', padding: '0.5rem 1rem', borderRadius: '8px 8px 0 0', border: '1px solid #333', borderBottom: 'none' }}>
-                <span style={{ fontSize: '0.8rem', color: '#888', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                  Replying to <strong style={{ color: 'var(--primary)' }}>{replyingTo.author}</strong>: {replyingTo.text}
-                </span>
-                <button onClick={() => setReplyingTo(null)} style={{ background: 'none', border: 'none', color: '#888', cursor: 'pointer' }}><X size={14} /></button>
+          {/* Mobile Top Bar */}
+          <div className="mobile-only-header" style={{ padding: '0.75rem 1rem', borderBottom: '1px solid #222', background: '#111', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <h1 style={{ fontSize: '1.2rem', margin: 0, color: 'var(--primary)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <Building size={20}/> ROME CONNECT
+              </h1>
+              <div style={{ display: 'flex', gap: '1rem', color: '#888' }}>
+                <Search size={20} />
+                <Bell size={20} />
+                <Link href="/romans-chat/profile" style={{ color: 'inherit' }}><User size={20} /></Link>
               </div>
+            </div>
+            <div style={{ display: 'flex', gap: '0.5rem' }}>
+              <button style={{ flex: 1, background: '#1a1a1a', border: '1px solid #333', color: '#fff', padding: '0.5rem', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', fontSize: '0.85rem' }}>
+                <UserPlus size={16}/> Add Neighbor
+              </button>
+              <button onClick={() => setActiveTab('trails')} style={{ flex: 1, background: '#1a1a1a', border: '1px solid #333', color: '#fff', padding: '0.5rem', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', fontSize: '0.85rem' }}>
+                <Map size={16}/> Where I May Rome
+              </button>
+            </div>
+          </div>
+
+          {/* Desktop Top Bar (Hidden on Mobile) */}
+          <div className="desktop-only" style={{ padding: '1rem 1.5rem', borderBottom: '1px solid #222', background: '#111', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+             <h1 style={{ fontSize: '1.5rem', margin: 0, color: 'var(--primary)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <Building size={24}/> ROME CONNECT
+              </h1>
+              <div style={{ display: 'flex', gap: '1rem' }}>
+                <button style={{ background: '#1a1a1a', border: '1px solid #333', color: '#fff', padding: '0.5rem 1rem', borderRadius: '8px', display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+                  <UserPlus size={16}/> Add Neighbor
+                </button>
+                <button onClick={() => setActiveTab('trails')} style={{ background: '#1a1a1a', border: '1px solid #333', color: '#fff', padding: '0.5rem 1rem', borderRadius: '8px', display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+                  <Map size={16}/> Where I May Rome
+                </button>
+              </div>
+          </div>
+
+          {/* Create Post Modal / Inline Form */}
+          <AnimatePresence>
+            {(showPostModal || !isMobile) && (
+              <motion.div 
+                key="post-modal"
+                initial={isMobile ? { opacity: 0, y: 100 } : {}}
+                animate={isMobile ? { opacity: 1, y: 0 } : {}}
+                exit={isMobile ? { opacity: 0, y: 100 } : {}}
+                className="post-modal-container"
+                style={{ padding: '1.5rem', borderBottom: '1px solid #222', background: '#0a0a0a', zIndex: 30 }}
+              >
+                <div style={{ background: '#111', borderRadius: '12px', padding: '1rem', border: '1px solid #333', opacity: isGuest ? 0.6 : 1, position: 'relative' }}>
+                  
+                  {/* Close button on mobile modal */}
+                  <button className="mobile-only-header" onClick={() => setShowPostModal(false)} style={{ position: 'absolute', top: '10px', right: '10px', background: 'none', border: 'none', color: '#888' }}><X size={20}/></button>
+                  
+                  {replyingTo && (
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#1a1a1a', padding: '0.5rem 1rem', borderRadius: '8px', marginBottom: '1rem', border: '1px solid #444', marginTop: isMobile ? '1.5rem' : '0' }}>
+                      <span style={{ fontSize: '0.8rem', color: '#888', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        Replying to <strong style={{ color: 'var(--primary)' }}>{replyingTo.author}</strong>: {replyingTo.text}
+                      </span>
+                      <button onClick={() => setReplyingTo(null)} style={{ background: 'none', border: 'none', color: '#888', cursor: 'pointer' }}><X size={14} /></button>
+                    </div>
+                  )}
+                  <form onSubmit={handleSend} style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginTop: (isMobile && !replyingTo) ? '1.5rem' : '0' }}>
+                    <input 
+                      type="text" value={input} onChange={(e) => setInput(e.target.value)}
+                      placeholder={isGuest ? "Sign in to join the conversation" : "What's happening in Rome? Use @name to tag."} 
+                      disabled={isGuest}
+                      style={{ width: '100%', background: 'transparent', border: 'none', color: '#fff', fontSize: '1.1rem', outline: 'none', fontFamily: 'inherit', cursor: isGuest ? 'not-allowed' : 'text' }} 
+                    />
+                    
+                    {imageFile && (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', background: '#1a1a1a', padding: '0.5rem 1rem', borderRadius: '8px', width: 'fit-content', border: '1px solid #333' }}>
+                        <ImageIcon size={14} color="var(--primary)" />
+                        <span style={{ fontSize: '0.8rem', color: '#d4d4d8' }}>{imageFile.name}</span>
+                        <button type="button" onClick={() => setImageFile(null)} disabled={isGuest} style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', marginLeft: '0.5rem' }}><X size={14} /></button>
+                      </div>
+                    )}
+
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid #222', paddingTop: '1rem' }}>
+                      <input type="file" accept="image/*" ref={fileInputRef} style={{ display: 'none' }} disabled={isGuest} onChange={(e) => { if (e.target.files && e.target.files[0]) setImageFile(e.target.files[0]); }} />
+                      <button type="button" onClick={() => fileInputRef.current?.click()} disabled={isGuest} style={{ background: 'none', border: 'none', color: isGuest ? '#555' : 'var(--primary)', cursor: isGuest ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: '0.5rem', fontFamily: 'var(--font-space)', fontSize: '0.9rem' }}>
+                        <ImageIcon size={18} /> Add Photo
+                      </button>
+                      
+                      <button type="submit" disabled={isGuest || uploading || (!input.trim() && !imageFile)} style={{ background: (isGuest || uploading || (!input.trim() && !imageFile)) ? '#333' : 'var(--primary)', color: '#000', border: 'none', padding: '0.5rem 1.5rem', borderRadius: '24px', fontWeight: 'bold', cursor: (isGuest || uploading || (!input.trim() && !imageFile)) ? 'not-allowed' : 'pointer' }}>
+                        {uploading ? 'Posting...' : 'Post'}
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              </motion.div>
             )}
-            <form onSubmit={handleSend} style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-              <input 
-                type="file" 
-                accept="image/*" 
-                ref={fileInputRef} 
-                style={{ display: 'none' }} 
-                onChange={(e) => {
-                  if (e.target.files && e.target.files[0]) setImageFile(e.target.files[0]);
-                }} 
-              />
-              <button 
-                type="button" 
-                onClick={() => fileInputRef.current?.click()}
-                style={{ background: 'none', border: 'none', color: imageFile ? 'var(--primary)' : '#888', cursor: 'pointer', padding: '0.5rem' }}
-                title="Attach Image"
-              >
-                <ImageIcon size={24} />
-              </button>
-              
-              <input 
-                type="text" 
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                placeholder={imageFile ? `Attached: ${imageFile.name} (Add description...)` : "Create a post... use @name to tag"} 
-                style={{ 
-                  flex: 1, 
-                  background: '#0a0a0a', 
-                  border: '1px solid #333', 
-                  padding: '0.75rem 1rem', 
-                  borderRadius: replyingTo ? '0 0 0 24px' : '24px', 
-                  color: '#fff',
-                  outline: 'none',
-                  fontFamily: 'inherit'
-                }} 
-              />
-              <button 
-                type="submit" 
-                disabled={uploading}
-                style={{ 
-                  background: uploading ? '#444' : 'var(--primary)', 
-                  color: '#000', 
-                  border: 'none', 
-                  padding: '0 1.5rem', 
-                  borderRadius: replyingTo ? '0 0 24px 0' : '24px', 
-                  fontWeight: 'bold',
-                  cursor: uploading ? 'not-allowed' : 'pointer',
-                  height: '42px'
-                }}
-              >
-                {uploading ? 'Posting...' : 'Post'}
-              </button>
-            </form>
+          </AnimatePresence>
+
+          {/* Filter Pills */}
+          <div style={{ display: 'flex', gap: '0.5rem', padding: '0 1.5rem 1rem 1.5rem', overflowX: 'auto', whiteSpace: 'nowrap', borderBottom: '1px solid #222', scrollbarWidth: 'none' }}>
+            <button style={{ background: 'var(--primary)', color: '#000', border: 'none', padding: '0.25rem 1rem', borderRadius: '16px', fontWeight: 'bold', fontSize: '0.85rem' }}>All</button>
+            <button style={{ background: '#1a1a1a', border: '1px solid #333', color: '#d4d4d8', padding: '0.25rem 1rem', borderRadius: '16px', fontSize: '0.85rem' }}>Neighbor Posts</button>
+            <button style={{ background: '#1a1a1a', border: '1px solid #333', color: '#d4d4d8', padding: '0.25rem 1rem', borderRadius: '16px', fontSize: '0.85rem' }}>Walks</button>
+            <button style={{ background: '#1a1a1a', border: '1px solid #333', color: '#d4d4d8', padding: '0.25rem 1rem', borderRadius: '16px', fontSize: '0.85rem' }}>Renovations</button>
+            <button style={{ background: '#1a1a1a', border: '1px solid #333', color: '#d4d4d8', padding: '0.25rem 1rem', borderRadius: '16px', fontSize: '0.85rem' }}>Local Alerts</button>
           </div>
 
           {/* Message List */}
-          <div style={{ flex: 1, overflowY: 'auto', padding: '1rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+          <div style={{ flex: 1, overflowY: 'auto', padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
             {errorMsg && (
-               <div style={{ textAlign: 'center', color: '#ef4444', marginTop: '2rem', fontFamily: 'var(--font-space)', padding: '1rem', background: 'rgba(239, 68, 68, 0.1)', borderRadius: '8px' }}>
+               <div style={{ textAlign: 'center', color: '#ef4444', fontFamily: 'var(--font-space)', padding: '1rem', background: 'rgba(239, 68, 68, 0.1)', borderRadius: '8px' }}>
                  ⚠️ <strong>Database Error:</strong> {errorMsg}
-                 <br /><br />
-                 If this says "Missing or insufficient permissions", you need to update your Firestore Security Rules in the Firebase Console to allow read/write access.
                </div>
             )}
             {messages.length === 0 && !errorMsg && (
@@ -314,136 +415,76 @@ export default function RomansChat() {
                   if (aSame && !bSame) return -1;
                   if (!aSame && bSame) return 1;
                   
-                  const aTime = a.timestamp?.toMillis() || 0;
-                  const bTime = b.timestamp?.toMillis() || 0;
+                  const aTime = (typeof a.timestamp?.toMillis === 'function') ? a.timestamp.toMillis() : 0;
+                  const bTime = (typeof b.timestamp?.toMillis === 'function') ? b.timestamp.toMillis() : 0;
                   return bTime - aTime;
                 });
               }
               
               return sortedMessages.map((msg) => {
-              const isSelf = msg.uid === user?.uid;
-              const isAdmin = msg.author === 'Cronan Admin';
+              const isAdmin = msg.author === 'Cronan Admin' || msg.author === 'Mayor / City Admin';
               
               return (
                 <motion.div 
-                  key={msg.id}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  style={{ 
-                    alignSelf: 'stretch',
-                    display: 'flex',
-                    gap: '1rem',
-                    flexDirection: 'row',
-                    position: 'relative',
-                    background: '#1a1a1a',
-                    padding: '1.25rem',
-                    borderRadius: '12px',
-                    border: isAdmin ? '1px solid rgba(255,183,3,0.3)' : '1px solid #333'
-                  }}
+                  key={msg.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+                  style={{ display: 'flex', gap: '1rem', position: 'relative', background: '#111', padding: '1.5rem', borderRadius: '12px', border: isAdmin ? '1px solid rgba(255,183,3,0.4)' : '1px solid #222' }}
                   onMouseLeave={() => setShowEmojiPicker(null)}
                 >
                   {/* Avatar */}
-                  <div style={{
-                    width: '42px',
-                    height: '42px',
-                    borderRadius: '50%',
-                    background: '#222',
-                    flexShrink: 0,
-                    overflow: 'hidden',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    border: isAdmin ? '2px solid var(--primary)' : '1px solid #444',
-                    backgroundImage: msg.photoURL ? `url(${msg.photoURL})` : 'none',
-                    backgroundSize: 'cover',
-                    backgroundPosition: 'center',
-                    marginTop: '0.2rem'
-                  }}>
-                    {!msg.photoURL && <span style={{ color: '#666', fontSize: '1rem', fontWeight: 'bold' }}>{msg.author.charAt(0).toUpperCase()}</span>}
-                  </div>
+                  <Link href={`/user/${msg.uid}`} style={{ width: '48px', height: '48px', borderRadius: '50%', background: '#222', flexShrink: 0, overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', border: isAdmin ? '2px solid var(--primary)' : '1px solid #444', backgroundImage: msg.photoURL ? `url(${msg.photoURL})` : 'none', backgroundSize: 'cover', backgroundPosition: 'center', textDecoration: 'none' }}>
+                    {!msg.photoURL && <span style={{ color: '#666', fontSize: '1.2rem', fontWeight: 'bold' }}>{(msg.author || 'R').charAt(0).toUpperCase()}</span>}
+                  </Link>
 
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', flex: 1 }}>
-                    {/* Sender Info & Actions */}
-                    <div style={{ 
-                      display: 'flex', 
-                      justifyContent: 'space-between',
-                      alignItems: 'center', 
-                      fontSize: '0.85rem', 
-                      fontFamily: 'var(--font-space)'
-                    }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                        <strong style={{ color: isAdmin ? 'var(--primary)' : '#fff', fontFamily: 'var(--font-oswald)', fontSize: '1.05rem', letterSpacing: '0.02em' }}>{msg.author}</strong>
-                        {msg.location && <span style={{ color: msg.location === userLocation ? 'var(--primary)' : '#888', fontSize: '0.75rem' }}>• {msg.location}</span>}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                      <div>
+                        <Link href={`/user/${msg.uid}`} style={{ color: isAdmin ? 'var(--primary)' : '#fff', fontFamily: 'var(--font-oswald)', fontSize: '1.1rem', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                          {msg.author || 'Roman'}
+                          {msg.location && <span style={{ color: msg.location === userLocation ? 'var(--primary)' : '#666', fontSize: '0.75rem', fontFamily: 'var(--font-space)', fontWeight: 'normal' }}>• {msg.location}</span>}
+                          {isAdmin && <span style={{ background: 'var(--primary)', color: '#000', padding: '1px 6px', borderRadius: '4px', fontSize: '0.65rem', fontWeight: 'bold' }}>OFFICIAL</span>}
+                        </Link>
+                        <div style={{ fontSize: '0.75rem', color: '#666', fontFamily: 'var(--font-space)', marginTop: '0.2rem' }}>
+                           {(typeof msg.timestamp?.toMillis === 'function') ? new Date(msg.timestamp.toMillis()).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'Just now'}
+                        </div>
                       </div>
                       
-                      <div className="chat-actions" style={{ display: 'flex', gap: '0.75rem', opacity: 0.8 }}>
-                        <button onClick={() => setReplyingTo({ id: msg.id, author: msg.author, text: msg.text })} style={{ background:'none', border:'none', color:'#aaa', cursor:'pointer' }} title="Reply"><CornerUpLeft size={16} /></button>
-                        <button onClick={() => setShowEmojiPicker(showEmojiPicker === msg.id ? null : msg.id)} style={{ background:'none', border:'none', color:'#aaa', cursor:'pointer' }} title="React"><Smile size={16} /></button>
-                      </div>
+                      {!isGuest && (
+                        <div style={{ display: 'flex', gap: '0.75rem' }}>
+                          <button onClick={() => setReplyingTo({ id: msg.id, author: msg.author, text: msg.text })} style={{ background:'none', border:'none', color:'#888', cursor:'pointer', transition: 'color 0.2s' }} onMouseOver={(e)=>e.currentTarget.style.color='var(--primary)'} onMouseOut={(e)=>e.currentTarget.style.color='#888'} title="Reply"><CornerUpLeft size={18} /></button>
+                          <button onClick={() => setShowEmojiPicker(showEmojiPicker === msg.id ? null : msg.id)} style={{ background:'none', border:'none', color:'#888', cursor:'pointer', transition: 'color 0.2s' }} onMouseOver={(e)=>e.currentTarget.style.color='var(--primary)'} onMouseOut={(e)=>e.currentTarget.style.color='#888'} title="React"><Smile size={18} /></button>
+                        </div>
+                      )}
                     </div>
 
-                    {/* Quoted Reply */}
                     {msg.replyTo && (
-                      <div style={{
-                        background: 'rgba(255, 255, 255, 0.05)',
-                        borderLeft: '2px solid var(--primary)',
-                        padding: '0.5rem',
-                        borderRadius: '4px',
-                        fontSize: '0.8rem',
-                        color: '#aaa',
-                        marginBottom: '0.25rem',
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        whiteSpace: 'nowrap'
-                      }}>
-                        <span style={{ color: 'var(--primary)' }}>{msg.replyTo.author}: </span>
-                        {msg.replyTo.text}
+                      <div style={{ background: 'rgba(255, 255, 255, 0.03)', borderLeft: '3px solid var(--primary)', padding: '0.75rem', borderRadius: '4px', fontSize: '0.85rem', color: '#aaa', marginTop: '0.5rem' }}>
+                        <strong style={{ color: 'var(--primary)' }}>@{msg.replyTo.author}: </strong>{msg.replyTo.text}
                       </div>
                     )}
 
-                    {/* Message Bubble */}
-                    <div style={{ 
-                      color: '#d4d4d8',
-                      fontSize: '1.05rem',
-                      lineHeight: '1.5',
-                      wordBreak: 'break-word',
-                      marginTop: '0.25rem'
-                    }}>
-                      {renderMessageText(msg.text)}
+                    <div style={{ color: '#d4d4d8', fontSize: '1.1rem', lineHeight: '1.5', wordBreak: 'break-word', marginTop: '0.5rem', fontFamily: 'var(--font-space)' }}>
+                      <ExpandableText text={msg.text} renderFn={renderMessageText} maxLength={150} />
                     </div>
                     
-                    {/* Attached Image */}
                     {msg.imageUrl && (
-                      <div style={{ marginTop: '0.75rem', borderRadius: '8px', overflow: 'hidden', border: '1px solid #333' }}>
-                        <img src={msg.imageUrl} alt="Attached to post" style={{ width: '100%', maxHeight: '400px', objectFit: 'cover', display: 'block' }} />
+                      <div style={{ marginTop: '1rem', borderRadius: '12px', overflow: 'hidden', border: '1px solid #333' }}>
+                        <img src={msg.imageUrl} alt="Attached" style={{ width: '100%', maxHeight: '500px', objectFit: 'cover', display: 'block' }} />
                       </div>
                     )}
 
-                    {/* Reactions Badge */}
                     {msg.reactions && Object.keys(msg.reactions).length > 0 && (
-                      <div style={{ display: 'flex', gap: '0.25rem', flexWrap: 'wrap', marginTop: '0.5rem' }}>
+                      <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginTop: '1rem' }}>
                         {Object.entries(msg.reactions).map(([emoji, uids]) => {
                           if (!uids || uids.length === 0) return null;
-                          const hasReacted = uids.includes(user.uid);
+                          const hasReacted = user?.uid ? uids.includes(user.uid) : false;
                           return (
                             <button 
-                              key={emoji}
-                              onClick={() => handleReaction(msg.id, emoji, hasReacted)}
-                              style={{ 
-                                background: hasReacted ? 'rgba(255,183,3,0.2)' : '#222',
-                                border: hasReacted ? '1px solid var(--primary)' : '1px solid #333',
-                                borderRadius: '12px',
-                                padding: '2px 6px',
-                                fontSize: '0.8rem',
-                                color: '#fff',
-                                cursor: 'pointer',
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '4px'
-                              }}
+                              key={emoji} 
+                              onClick={() => handleReaction(msg.id, emoji, hasReacted)} 
+                              disabled={isGuest}
+                              style={{ background: hasReacted ? 'rgba(255,183,3,0.15)' : '#222', border: hasReacted ? '1px solid var(--primary)' : '1px solid #333', borderRadius: '16px', padding: '4px 10px', fontSize: '0.9rem', color: hasReacted ? 'var(--primary)' : '#fff', cursor: isGuest ? 'default' : 'pointer', display: 'flex', alignItems: 'center', gap: '6px', transition: 'all 0.2s', opacity: isGuest ? 0.8 : 1 }}
                             >
-                              <span>{emoji}</span>
-                              <span style={{ fontSize: '0.7rem' }}>{uids.length}</span>
+                              <span>{emoji}</span><span style={{ fontSize: '0.8rem', fontWeight: 'bold' }}>{uids.length}</span>
                             </button>
                           );
                         })}
@@ -453,27 +494,9 @@ export default function RomansChat() {
 
                   {/* Emoji Picker Popup */}
                   {showEmojiPicker === msg.id && (
-                    <div style={{ 
-                      position: 'absolute', 
-                      top: '40px', 
-                      right: '20px', 
-                      background: '#222', 
-                      border: '1px solid #444', 
-                      borderRadius: '24px', 
-                      padding: '0.5rem', 
-                      display: 'flex', 
-                      gap: '0.5rem',
-                      zIndex: 20,
-                      boxShadow: '0 5px 15px rgba(0,0,0,0.5)'
-                    }}>
+                    <div style={{ position: 'absolute', top: '50px', right: '20px', background: '#222', border: '1px solid #444', borderRadius: '24px', padding: '0.5rem', display: 'flex', gap: '0.5rem', zIndex: 20, boxShadow: '0 10px 25px rgba(0,0,0,0.5)' }}>
                       {EMOJIS.map(emoji => (
-                        <button 
-                          key={emoji}
-                          onClick={() => handleReaction(msg.id, emoji, msg.reactions?.[emoji]?.includes(user.uid))}
-                          style={{ background: 'none', border: 'none', fontSize: '1.2rem', cursor: 'pointer', transition: 'transform 0.1s' }}
-                          onMouseOver={(e) => e.target.style.transform = 'scale(1.2)'}
-                          onMouseOut={(e) => e.target.style.transform = 'scale(1)'}
-                        >
+                        <button key={emoji} onClick={() => handleReaction(msg.id, emoji, msg.reactions?.[emoji]?.includes(user?.uid))} style={{ background: 'none', border: 'none', fontSize: '1.4rem', cursor: 'pointer', transition: 'transform 0.1s' }} onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.2)'} onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}>
                           {emoji}
                         </button>
                       ))}
@@ -481,59 +504,105 @@ export default function RomansChat() {
                   )}
                 </motion.div>
               );
-            })})()}
+            });
+            })()}
           </div>
         </div>
 
-        {/* Right Column: Contractors (Desktop & Active Mobile Tab) */}
-        <div style={{ 
-          flex: 1, 
-          display: (activeTab === 'contractors' || (typeof window !== 'undefined' && window.innerWidth >= 768)) ? 'block' : 'none',
-          minWidth: '300px',
-          maxWidth: (typeof window !== 'undefined' && window.innerWidth >= 768) ? '350px' : '100%'
+        {/* RIGHT/ACTIVE TAB COLUMN (Desktop replaces third col, Mobile renders entirely replacing Feed) */}
+        <div className={activeTab === 'trails' || activeTab === 'renovations' ? 'mobile-visible-flex desktop-sidebar-right' : 'mobile-hidden desktop-sidebar-right'} style={{ 
+          width: '350px', 
+          flexShrink: 0, 
+          borderLeft: '1px solid #222', 
+          background: '#0a0a0a',
+          flexDirection: 'column'
         }}>
-          <ContractorsBoard user={user} />
+          <div style={{ flex: 1, overflowY: 'auto' }}>
+            <div style={{ display: activeTab === 'trails' ? 'block' : 'none', height: '100%' }}>
+              <TrailsPortal user={user} />
+            </div>
+            <div style={{ display: activeTab === 'renovations' ? 'block' : 'none', height: '100%' }}>
+              <RenovationsBoard user={user} />
+            </div>
+          </div>
         </div>
 
       </div>
 
-      {/* Mobile Bottom Navigation Bar */}
+      {/* Global CSS Overrides for Responsive Behavior */}
       <style dangerouslySetInnerHTML={{__html: `
-        @media (min-width: 768px) {
+        .desktop-sidebar-left { display: flex; }
+        .desktop-sidebar-right { display: flex; }
+        .mobile-visible-flex { display: none !important; }
+        .mobile-hidden { display: flex; }
+        
+        @media (max-width: 1023px) {
+          .desktop-sidebar-left { display: none !important; }
+          .desktop-only { display: none !important; }
+          .desktop-sidebar-right {
+            width: 100% !important;
+            border-left: none !important;
+          }
+          .mobile-visible-flex { display: flex !important; }
+          .mobile-hidden { display: none !important; }
+          .desktop-only-btn { display: none !important; }
+          
+          .post-modal-container {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            top: 0;
+            background: rgba(0,0,0,0.9) !important;
+            backdrop-filter: blur(10px);
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            padding: 0 !important;
+          }
+          .post-modal-container > div {
+            border-radius: 24px 24px 0 0 !important;
+            border-bottom: none !important;
+            padding-bottom: 3rem !important;
+          }
+        }
+        @media (min-width: 1024px) {
           .mobile-nav { display: none !important; }
+          .mobile-only-header { display: none !important; }
+          .mobile-visible-flex { display: flex !important; }
+          .mobile-hidden { display: flex !important; }
         }
       `}} />
+
+      {/* Mobile Bottom Navigation Bar */}
       <div className="mobile-nav" style={{ 
-        display: 'flex', 
-        justifyContent: 'space-around', 
-        alignItems: 'center', 
-        background: '#111', 
-        borderTop: '1px solid #333',
-        padding: '0.75rem',
-        paddingBottom: 'calc(0.75rem + env(safe-area-inset-bottom))',
-        flexShrink: 0
+        display: 'flex', justifyContent: 'space-around', alignItems: 'center', 
+        background: '#111', borderTop: '1px solid #333', padding: '0.75rem', 
+        paddingBottom: 'calc(0.75rem + env(safe-area-inset-bottom))', flexShrink: 0,
+        zIndex: 40
       }}>
-        <button 
-          onClick={() => setActiveTab('jobs')}
-          style={{ background: 'none', border: 'none', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', color: activeTab === 'jobs' ? 'var(--primary)' : '#888', cursor: 'pointer' }}
-        >
-          <Briefcase size={20} />
-          <span style={{ fontSize: '0.7rem', fontFamily: 'var(--font-oswald)' }}>Projects</span>
+        <button onClick={() => { setActiveTab('feed'); setShowPostModal(false); }} style={{ background: 'none', border: 'none', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', color: activeTab === 'feed' ? 'var(--primary)' : '#888', cursor: 'pointer' }}>
+          <Home size={22} />
+          <span style={{ fontSize: '0.65rem', fontFamily: 'var(--font-oswald)' }}>Feed</span>
         </button>
-        <button 
-          onClick={() => setActiveTab('chat')}
-          style={{ background: 'none', border: 'none', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', color: activeTab === 'chat' ? 'var(--primary)' : '#888', cursor: 'pointer' }}
-        >
-          <MessageSquare size={20} />
-          <span style={{ fontSize: '0.7rem', fontFamily: 'var(--font-oswald)' }}>Chat</span>
+        <button onClick={() => { setActiveTab('trails'); setShowPostModal(false); }} style={{ background: 'none', border: 'none', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', color: activeTab === 'trails' ? 'var(--primary)' : '#888', cursor: 'pointer' }}>
+          <Map size={22} />
+          <span style={{ fontSize: '0.65rem', fontFamily: 'var(--font-oswald)' }}>Trails</span>
         </button>
-        <button 
-          onClick={() => setActiveTab('contractors')}
-          style={{ background: 'none', border: 'none', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', color: activeTab === 'contractors' ? 'var(--primary)' : '#888', cursor: 'pointer' }}
-        >
-          <Wrench size={20} />
-          <span style={{ fontSize: '0.7rem', fontFamily: 'var(--font-oswald)' }}>Contractors</span>
+        
+        {/* Floating Create Action Button */}
+        <button onClick={() => setShowPostModal(true)} style={{ background: 'var(--primary)', border: 'none', width: '50px', height: '50px', borderRadius: '25px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#000', cursor: 'pointer', transform: 'translateY(-10px)', boxShadow: '0 4px 15px rgba(255, 183, 3, 0.4)' }}>
+          <Plus size={28} />
         </button>
+
+        <button onClick={() => { setActiveTab('renovations'); setShowPostModal(false); }} style={{ background: 'none', border: 'none', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', color: activeTab === 'renovations' ? 'var(--primary)' : '#888', cursor: 'pointer' }}>
+          <Building size={22} />
+          <span style={{ fontSize: '0.65rem', fontFamily: 'var(--font-oswald)' }}>Projects</span>
+        </button>
+        <Link href="/romans-chat/messages" style={{ background: 'none', border: 'none', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', color: '#888', textDecoration: 'none', cursor: 'pointer' }}>
+          <MessageSquare size={22} />
+          <span style={{ fontSize: '0.65rem', fontFamily: 'var(--font-oswald)' }}>Messages</span>
+        </Link>
       </div>
 
     </div>

@@ -1,0 +1,43 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+import { auth } from '@/lib/firebase';
+import { onAuthStateChanged } from 'firebase/auth';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
+import { ArrowLeft } from 'lucide-react';
+import ContractorsBoard from '@/components/ContractorsBoard';
+
+export default function ContractorsPage() {
+  const router = useRouter();
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      if (!currentUser || currentUser.isAnonymous) {
+        router.push('/romans-chat/login');
+      } else {
+        setUser(currentUser);
+      }
+      setLoading(false);
+    });
+    return () => unsubscribe();
+  }, [router]);
+
+  if (loading) return <div style={{ background: '#0a0a0a', minHeight: '100vh' }}></div>;
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', background: '#0a0a0a' }}>
+      <header style={{ padding: '1rem', borderBottom: '1px solid #222', background: '#111', display: 'flex', alignItems: 'center', gap: '1rem' }}>
+        <Link href="/romans-chat" style={{ color: '#888', display: 'flex', alignItems: 'center' }}>
+          <ArrowLeft size={24} />
+        </Link>
+        <h1 style={{ fontSize: '1.2rem', margin: 0, color: 'var(--primary)', fontFamily: 'var(--font-oswald)' }}>Contractors Directory</h1>
+      </header>
+      <main style={{ flex: 1, overflow: 'hidden' }}>
+        <ContractorsBoard user={user} />
+      </main>
+    </div>
+  );
+}
