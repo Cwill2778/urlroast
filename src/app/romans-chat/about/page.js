@@ -57,6 +57,10 @@ export default function AboutPage() {
               <strong style={{ color: 'var(--primary)', minWidth: '120px' }}>Charlie Ford</strong>
               <span style={{ color: '#888' }}>Projects & Contractors Boards</span>
             </li>
+            <li style={{ background: '#111', padding: '1rem', borderRadius: '8px', border: '1px solid #222', display: 'flex', alignItems: 'center', gap: '1rem' }}>
+              <strong style={{ color: 'var(--primary)', minWidth: '120px' }}>Charles Willis</strong>
+              <span style={{ color: '#888' }}>Company of the Month & Polls</span>
+            </li>
           </ul>
         </motion.div>
 

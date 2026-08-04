@@ -8,7 +8,7 @@ import { auth, db, storage } from '@/lib/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import { collection, query, orderBy, onSnapshot, addDoc, updateDoc, deleteDoc, doc, serverTimestamp, arrayUnion, arrayRemove, getDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { Briefcase, MessageSquare, Wrench, X, CornerUpLeft, Smile, Image as ImageIcon, User, Home, LogOut, Search, Bell, UserPlus, Map, Building, Plus, Edit, Trash2, Info } from 'lucide-react';
+import { Briefcase, MessageSquare, Wrench, X, CornerUpLeft, Smile, Image as ImageIcon, User, Home, LogOut, Search, Bell, UserPlus, Map, Building, Plus, Edit, Trash2, Info, Award, BarChart2 } from 'lucide-react';
 
 import TrailsPortal from '@/components/TrailsPortal';
 import RenovationsBoard from '@/components/RenovationsBoard';
@@ -328,6 +328,9 @@ export default function RomansChat() {
             <button onClick={() => setActiveTab('renovations')} className="desktop-only-btn" style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '0.75rem 1rem', borderRadius: '8px', background: activeTab === 'renovations' ? 'rgba(255,183,3,0.1)' : 'transparent', color: activeTab === 'renovations' ? 'var(--primary)' : '#d4d4d8', border: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: '1rem', fontWeight: activeTab === 'renovations' ? 'bold' : 'normal', transition: 'background 0.2s', textAlign: 'left' }}>
               <Building size={20} /> Civic Projects
             </button>
+            <button onClick={() => setActiveTab('company')} className="desktop-only-btn" style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '0.75rem 1rem', borderRadius: '8px', background: activeTab === 'company' ? 'rgba(255,183,3,0.1)' : 'transparent', color: activeTab === 'company' ? 'var(--primary)' : '#d4d4d8', border: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: '1rem', fontWeight: activeTab === 'company' ? 'bold' : 'normal', transition: 'background 0.2s', textAlign: 'left' }}>
+              <Award size={20} /> Company of the Month
+            </button>
             
             <div style={{ height: '1px', background: '#222', margin: '0.5rem 0' }}></div>
             
@@ -605,7 +608,7 @@ export default function RomansChat() {
         </div>
 
         {/* RIGHT/ACTIVE TAB COLUMN (Desktop replaces third col, Mobile renders entirely replacing Feed) */}
-        <div className={activeTab === 'trails' || activeTab === 'renovations' ? 'mobile-visible-flex desktop-sidebar-right' : 'mobile-hidden desktop-sidebar-right'} style={{ 
+        <div className={activeTab === 'trails' || activeTab === 'renovations' || activeTab === 'company' ? 'mobile-visible-flex desktop-sidebar-right' : 'mobile-hidden desktop-sidebar-right'} style={{ 
           width: '350px', 
           flexShrink: 0, 
           borderLeft: '1px solid #222', 
@@ -613,6 +616,35 @@ export default function RomansChat() {
           flexDirection: 'column'
         }}>
           <div style={{ flex: 1, overflowY: 'auto' }}>
+            <div style={{ display: activeTab === 'feed' || activeTab === 'company' ? 'block' : 'none', height: '100%', padding: '1.5rem' }}>
+              <div style={{ background: '#111', border: '1px solid #333', borderRadius: '12px', padding: '1.5rem', marginBottom: '1.5rem' }}>
+                <h3 style={{ margin: '0 0 1rem 0', color: '#fff', fontSize: '1.1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <Award color="var(--primary)" size={20} /> Company of the Month
+                </h3>
+                <p style={{ color: '#d4d4d8', fontSize: '0.9rem', lineHeight: '1.5', marginBottom: '1rem' }}>
+                  Highlighting local businesses for their contributions to the city of Rome.
+                </p>
+                <div style={{ background: '#222', borderRadius: '8px', padding: '1rem', border: '1px solid var(--primary)', textAlign: 'center' }}>
+                  <h4 style={{ margin: '0 0 0.5rem 0', color: 'var(--primary)', fontSize: '1.1rem' }}>Nailed It Property Solutions</h4>
+                  <p style={{ margin: '0 0 1rem 0', color: '#888', fontSize: '0.8rem', lineHeight: '1.4' }}>Selected for exceptional community service and local dedication.</p>
+                  
+                  <div style={{ fontSize: '0.75rem', color: '#666', borderTop: '1px solid #333', paddingTop: '0.75rem' }}>
+                    Feature suggestion by:<br/>
+                    <strong style={{ color: '#888' }}>Charles Willis</strong>
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ background: '#111', border: '1px solid #333', borderRadius: '12px', padding: '1.5rem' }}>
+                <h3 style={{ margin: '0 0 1rem 0', color: '#fff', fontSize: '1.1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <BarChart2 color="var(--primary)" size={20} /> Upcoming Poll
+                </h3>
+                <p style={{ color: '#888', fontSize: '0.85rem', lineHeight: '1.5', margin: 0 }}>
+                  Voting for next month's featured company will open during the final week of this month.
+                </p>
+              </div>
+            </div>
+            
             <div style={{ display: activeTab === 'trails' ? 'block' : 'none', height: '100%' }}>
               <TrailsPortal user={user} />
             </div>
@@ -693,6 +725,10 @@ export default function RomansChat() {
         <button onClick={() => { setActiveTab('renovations'); setShowPostModal(false); }} style={{ background: 'none', border: 'none', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', color: activeTab === 'renovations' ? 'var(--primary)' : '#888', cursor: 'pointer' }}>
           <Building size={22} />
           <span style={{ fontSize: '0.65rem', fontFamily: 'var(--font-oswald)' }}>Projects</span>
+        </button>
+        <button onClick={() => { setActiveTab('company'); setShowPostModal(false); }} style={{ background: 'none', border: 'none', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', color: activeTab === 'company' ? 'var(--primary)' : '#888', cursor: 'pointer' }}>
+          <Award size={22} />
+          <span style={{ fontSize: '0.65rem', fontFamily: 'var(--font-oswald)' }}>Awards</span>
         </button>
         <Link href="/romans-chat/messages" style={{ background: 'none', border: 'none', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', color: '#888', textDecoration: 'none', cursor: 'pointer' }}>
           <MessageSquare size={22} />
