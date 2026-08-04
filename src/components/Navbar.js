@@ -30,8 +30,8 @@ export default function Navbar() {
         alignItems: 'center'
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '2rem' }}>
-          <Link href="/" style={{ fontWeight: 'bold', fontSize: '1.2rem', color: 'var(--foreground)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '1rem' }}>
-            <span>Cronan<span className="gradient-text">Tech</span></span>
+          <Link href="/" style={{ fontWeight: 'bold', fontSize: '1.2rem', color: 'var(--foreground)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '1rem', fontFamily: 'var(--font-oswald)', letterSpacing: '0.05em', textTransform: 'uppercase' }}>
+            <span>The Roman <span className="gradient-text">Exchange</span></span>
           </Link>
           <div className="desktop-only" style={{ marginTop: '2px' }}>
             <SystemStatus />
@@ -136,6 +136,7 @@ export default function Navbar() {
             <Link href="/work/software" onClick={() => setMobileMenuOpen(false)} style={{ color: '#fff', textDecoration: 'none' }}>Work: Software & AI</Link>
             <Link href="/work/operations" onClick={() => setMobileMenuOpen(false)} style={{ color: '#fff', textDecoration: 'none' }}>Work: Operations</Link>
             <Link href="/work/support" onClick={() => setMobileMenuOpen(false)} style={{ color: '#fff', textDecoration: 'none' }}>Work: Support</Link>
+            <Link href="/romans-chat?tab=company" onClick={() => setMobileMenuOpen(false)} style={{ color: '#fff', textDecoration: 'none' }}>Company of the Month</Link>
             <Link href="/romans-chat/about" onClick={() => setMobileMenuOpen(false)} style={{ color: '#fff', textDecoration: 'none' }}>About</Link>
             <Link href="/contact" onClick={() => setMobileMenuOpen(false)} style={{ color: '#fff', textDecoration: 'none' }}>Contact</Link>
             <Link href="https://romanexchange.cronantech.com" onClick={() => setMobileMenuOpen(false)} style={{ color: 'var(--primary)', textDecoration: 'none', fontWeight: 'bold' }}>Roman Exchange</Link>

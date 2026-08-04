@@ -57,7 +57,7 @@ export default function RootLayout({ children }) {
 
           {/* Global Footer */}
           <footer style={{ width: '100%', padding: '2rem', borderTop: '1px solid var(--border)', textAlign: 'center', color: '#a1a1aa', fontSize: '0.9rem' }}>
-            <p style={{ marginBottom: '1rem' }}>&copy; {new Date().getFullYear()} Cronan Technology. All rights reserved.</p>
+            <p style={{ marginBottom: '1rem' }}>&copy; {new Date().getFullYear()} The Roman Exchange. Built by Cronan Technology.</p>
             <div style={{ display: 'flex', justifyContent: 'center', gap: '2rem', flexWrap: 'wrap' }}>
               <a href="tel:7068448193" style={{ textDecoration: 'none', color: '#d4d4d8', fontFamily: 'var(--font-space)' }}>&#9742; (706) 844-8193</a>
               <a href="mailto:c.brianna@cronantech.com" style={{ textDecoration: 'none', color: '#d4d4d8', fontFamily: 'var(--font-space)' }}>&#9993; c.brianna@cronantech.com</a>

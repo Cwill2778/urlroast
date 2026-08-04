@@ -8,7 +8,7 @@ import { auth, db, storage } from '@/lib/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import { collection, query, orderBy, onSnapshot, addDoc, updateDoc, deleteDoc, doc, serverTimestamp, arrayUnion, arrayRemove, getDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { Briefcase, MessageSquare, Wrench, X, CornerUpLeft, Smile, Image as ImageIcon, User, Home, LogOut, Search, Bell, UserPlus, Map, Building, Plus, Edit, Trash2, Info, Award, BarChart2 } from 'lucide-react';
+import { Briefcase, MessageSquare, Wrench, X, CornerUpLeft, Smile, Image as ImageIcon, User, Home, LogOut, Search, Bell, UserPlus, Map, Building, Plus, Edit, Trash2, Info, Award, BarChart2, ShoppingCart } from 'lucide-react';
 
 import TrailsPortal from '@/components/TrailsPortal';
 import RenovationsBoard from '@/components/RenovationsBoard';
@@ -38,6 +38,16 @@ export default function RomansChat() {
   const [editInput, setEditInput] = useState('');
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [showNotificationsModal, setShowNotificationsModal] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const tab = params.get('tab');
+      if (tab === 'company' || tab === 'marketplace') {
+        setActiveTab(tab);
+      }
+    }
+  }, []);
 
   // Emojis for quick reactions
   const EMOJIS = ['👍', '❤️', '😂', '🔥', '👏'];
@@ -331,6 +341,9 @@ export default function RomansChat() {
             <button onClick={() => setActiveTab('company')} className="desktop-only-btn" style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '0.75rem 1rem', borderRadius: '8px', background: activeTab === 'company' ? 'rgba(255,183,3,0.1)' : 'transparent', color: activeTab === 'company' ? 'var(--primary)' : '#d4d4d8', border: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: '1rem', fontWeight: activeTab === 'company' ? 'bold' : 'normal', transition: 'background 0.2s', textAlign: 'left' }}>
               <Award size={20} /> Company of the Month
             </button>
+            <button onClick={() => setActiveTab('marketplace')} className="desktop-only-btn" style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '0.75rem 1rem', borderRadius: '8px', background: activeTab === 'marketplace' ? 'rgba(255,183,3,0.1)' : 'transparent', color: activeTab === 'marketplace' ? 'var(--primary)' : '#d4d4d8', border: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: '1rem', fontWeight: activeTab === 'marketplace' ? 'bold' : 'normal', transition: 'background 0.2s', textAlign: 'left' }}>
+              <ShoppingCart size={20} /> Marketplace
+            </button>
             
             <div style={{ height: '1px', background: '#222', margin: '0.5rem 0' }}></div>
             
@@ -608,7 +621,7 @@ export default function RomansChat() {
         </div>
 
         {/* RIGHT/ACTIVE TAB COLUMN (Desktop replaces third col, Mobile renders entirely replacing Feed) */}
-        <div className={activeTab === 'trails' || activeTab === 'renovations' || activeTab === 'company' ? 'mobile-visible-flex desktop-sidebar-right' : 'mobile-hidden desktop-sidebar-right'} style={{ 
+        <div className={activeTab === 'trails' || activeTab === 'renovations' || activeTab === 'company' || activeTab === 'marketplace' ? 'mobile-visible-flex desktop-sidebar-right' : 'mobile-hidden desktop-sidebar-right'} style={{ 
           width: '350px', 
           flexShrink: 0, 
           borderLeft: '1px solid #222', 
@@ -650,6 +663,11 @@ export default function RomansChat() {
             </div>
             <div style={{ display: activeTab === 'renovations' ? 'block' : 'none', height: '100%' }}>
               <RenovationsBoard user={user} />
+            </div>
+            <div style={{ display: activeTab === 'marketplace' ? 'flex' : 'none', height: '100%', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '2rem', textAlign: 'center' }}>
+              <ShoppingCart size={48} color="var(--primary)" style={{ marginBottom: '1rem' }} />
+              <h2 style={{ color: '#fff', fontSize: '1.5rem', fontFamily: 'var(--font-oswald)', marginBottom: '0.5rem' }}>Rome Marketplace</h2>
+              <p style={{ color: '#888', fontSize: '0.9rem', lineHeight: '1.5' }}>Coming soon! Buy, sell, and trade goods with your local Roman neighbors.</p>
             </div>
           </div>
         </div>
@@ -726,9 +744,9 @@ export default function RomansChat() {
           <Building size={22} />
           <span style={{ fontSize: '0.65rem', fontFamily: 'var(--font-oswald)' }}>Projects</span>
         </button>
-        <button onClick={() => { setActiveTab('company'); setShowPostModal(false); }} style={{ background: 'none', border: 'none', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', color: activeTab === 'company' ? 'var(--primary)' : '#888', cursor: 'pointer' }}>
-          <Award size={22} />
-          <span style={{ fontSize: '0.65rem', fontFamily: 'var(--font-oswald)' }}>Awards</span>
+        <button onClick={() => { setActiveTab('marketplace'); setShowPostModal(false); }} style={{ background: 'none', border: 'none', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', color: activeTab === 'marketplace' ? 'var(--primary)' : '#888', cursor: 'pointer' }}>
+          <ShoppingCart size={22} />
+          <span style={{ fontSize: '0.65rem', fontFamily: 'var(--font-oswald)' }}>Market</span>
         </button>
         <Link href="/romans-chat/messages" style={{ background: 'none', border: 'none', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px', color: '#888', textDecoration: 'none', cursor: 'pointer' }}>
           <MessageSquare size={22} />
