@@ -81,7 +81,7 @@ export default function Navbar() {
             )}
           </div>
 
-          <Link href="/about" style={{ color: '#d4d4d8', textDecoration: 'none', fontSize: '0.95rem' }}>About</Link>
+          <Link href="/romans-chat/about" style={{ color: '#d4d4d8', textDecoration: 'none', fontSize: '0.95rem' }}>About</Link>
           <Link href="/contact" style={{ color: '#d4d4d8', textDecoration: 'none', fontSize: '0.95rem' }}>Contact</Link>
           <Link href="https://romanexchange.cronantech.com" className="nav-link" style={{ 
             color: 'var(--primary)',
@@ -136,7 +136,7 @@ export default function Navbar() {
             <Link href="/work/software" onClick={() => setMobileMenuOpen(false)} style={{ color: '#fff', textDecoration: 'none' }}>Work: Software & AI</Link>
             <Link href="/work/operations" onClick={() => setMobileMenuOpen(false)} style={{ color: '#fff', textDecoration: 'none' }}>Work: Operations</Link>
             <Link href="/work/support" onClick={() => setMobileMenuOpen(false)} style={{ color: '#fff', textDecoration: 'none' }}>Work: Support</Link>
-            <Link href="/about" onClick={() => setMobileMenuOpen(false)} style={{ color: '#fff', textDecoration: 'none' }}>About</Link>
+            <Link href="/romans-chat/about" onClick={() => setMobileMenuOpen(false)} style={{ color: '#fff', textDecoration: 'none' }}>About</Link>
             <Link href="/contact" onClick={() => setMobileMenuOpen(false)} style={{ color: '#fff', textDecoration: 'none' }}>Contact</Link>
             <Link href="https://romanexchange.cronantech.com" onClick={() => setMobileMenuOpen(false)} style={{ color: 'var(--primary)', textDecoration: 'none', fontWeight: 'bold' }}>Roman Exchange</Link>
           </div>
