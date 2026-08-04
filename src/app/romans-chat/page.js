@@ -6,9 +6,9 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { auth, db, storage } from '@/lib/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
-import { collection, query, orderBy, onSnapshot, addDoc, updateDoc, doc, serverTimestamp, arrayUnion, arrayRemove, getDoc } from 'firebase/firestore';
+import { collection, query, orderBy, onSnapshot, addDoc, updateDoc, deleteDoc, doc, serverTimestamp, arrayUnion, arrayRemove, getDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { Briefcase, MessageSquare, Wrench, X, CornerUpLeft, Smile, Image as ImageIcon, User, Home, LogOut, Search, Bell, UserPlus, Map, Building, Plus } from 'lucide-react';
+import { Briefcase, MessageSquare, Wrench, X, CornerUpLeft, Smile, Image as ImageIcon, User, Home, LogOut, Search, Bell, UserPlus, Map, Building, Plus, Edit, Trash2, Info } from 'lucide-react';
 
 import TrailsPortal from '@/components/TrailsPortal';
 import RenovationsBoard from '@/components/RenovationsBoard';
@@ -34,6 +34,10 @@ export default function RomansChat() {
   const [replyingTo, setReplyingTo] = useState(null);
   const [showEmojiPicker, setShowEmojiPicker] = useState(null);
   const [showPostModal, setShowPostModal] = useState(false);
+  const [editingPostId, setEditingPostId] = useState(null);
+  const [editInput, setEditInput] = useState('');
+  const [showInviteModal, setShowInviteModal] = useState(false);
+  const [showNotificationsModal, setShowNotificationsModal] = useState(false);
 
   // Emojis for quick reactions
   const EMOJIS = ['👍', '❤️', '😂', '🔥', '👏'];
@@ -79,7 +83,7 @@ export default function RomansChat() {
               
               if (isMentioned || isReplied) {
                 if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
-                  new Notification('Rome Connect', {
+                  new Notification('The Roman Exchange', {
                     body: `${newMsg.author}: ${newMsg.text}`
                   });
                 }
@@ -155,6 +159,28 @@ export default function RomansChat() {
     }
   };
 
+  const handleDelete = async (msgId) => {
+    if (confirm('Are you sure you want to delete this post?')) {
+      try {
+        await deleteDoc(doc(db, 'messages', msgId));
+      } catch (error) {
+        console.error("Error deleting message:", error);
+      }
+    }
+  };
+
+  const handleEditSubmit = async (msgId) => {
+    if (!editInput.trim()) return;
+    try {
+      await updateDoc(doc(db, 'messages', msgId), {
+        text: editInput
+      });
+      setEditingPostId(null);
+    } catch (error) {
+      console.error("Error updating message:", error);
+    }
+  };
+
   const handleReaction = async (msgId, emoji, hasReacted) => {
     if (!user || user.isAnonymous) return;
     const msgRef = doc(db, 'messages', msgId);
@@ -182,7 +208,7 @@ export default function RomansChat() {
   if (loading) {
     return (
       <div style={{ position: 'fixed', top: '73px', bottom: 0, left: 0, right: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#0a0a0a', color: 'var(--primary)', fontFamily: 'var(--font-space)', zIndex: 10 }}>
-        INITIALIZING ROME CONNECT...
+        INITIALIZING THE ROMAN EXCHANGE...
       </div>
     );
   }
@@ -205,7 +231,7 @@ export default function RomansChat() {
             >
               <h2 style={{ color: 'var(--primary)', margin: '0 0 1rem 0', fontSize: '1.5rem' }}>Welcome, Guest!</h2>
               <p style={{ color: '#d4d4d8', fontFamily: 'var(--font-space)', fontSize: '0.95rem', lineHeight: 1.6, marginBottom: '2rem' }}>
-                Logging in anonymously you wont be able to post in the feed because you must be signed in. However, you can take a look around and hopefully you decide to join us here at Rome Connect.
+                Logging in anonymously you wont be able to post in the feed because you must be signed in. However, you can take a look around and hopefully you decide to join us here at The Roman Exchange.
               </p>
               <button 
                 onClick={() => setShowGuestPopup(false)}
@@ -213,6 +239,48 @@ export default function RomansChat() {
               >
                 Start Exploring
               </button>
+            </motion.div>
+          </motion.div>
+        )}
+        
+        {showInviteModal && (
+          <motion.div 
+            key="invite-modal"
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(8px)', zIndex: 60, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}
+          >
+            <motion.div 
+              initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }}
+              style={{ background: '#111', border: '1px solid #333', borderRadius: '16px', padding: '2.5rem', width: '100%', maxWidth: '400px', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)', position: 'relative' }}
+            >
+              <button onClick={() => setShowInviteModal(false)} style={{ position: 'absolute', top: '15px', right: '15px', background: 'none', border: 'none', color: '#888', cursor: 'pointer' }}><X size={20}/></button>
+              <h2 style={{ color: 'var(--primary)', margin: '0 0 1rem 0', fontSize: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><UserPlus size={24}/> Add Neighbor</h2>
+              <p style={{ color: '#d4d4d8', fontFamily: 'var(--font-space)', fontSize: '0.95rem', lineHeight: 1.6, marginBottom: '1.5rem' }}>
+                Share this link with your neighbors to invite them to The Roman Exchange!
+              </p>
+              <div style={{ display: 'flex', gap: '0.5rem' }}>
+                <input type="text" readOnly value="https://romanexchange.cronantech.com" style={{ flex: 1, background: '#000', border: '1px solid #333', color: '#fff', padding: '0.75rem', borderRadius: '8px', fontFamily: 'var(--font-space)' }} />
+                <button onClick={() => { navigator.clipboard.writeText('https://romanexchange.cronantech.com'); alert('Link copied!'); setShowInviteModal(false); }} style={{ background: 'var(--primary)', color: '#000', border: 'none', padding: '0 1rem', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer' }}>Copy</button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+
+        {showNotificationsModal && (
+          <motion.div 
+            key="notif-modal"
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(8px)', zIndex: 60, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '1rem' }}
+          >
+            <motion.div 
+              initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }}
+              style={{ background: '#111', border: '1px solid #333', borderRadius: '16px', padding: '2.5rem', width: '100%', maxWidth: '400px', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)', position: 'relative' }}
+            >
+              <button onClick={() => setShowNotificationsModal(false)} style={{ position: 'absolute', top: '15px', right: '15px', background: 'none', border: 'none', color: '#888', cursor: 'pointer' }}><X size={20}/></button>
+              <h2 style={{ color: 'var(--primary)', margin: '0 0 1rem 0', fontSize: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}><Bell size={24}/> Notifications</h2>
+              <div style={{ background: '#1a1a1a', border: '1px solid #222', borderRadius: '8px', padding: '2rem', textAlign: 'center', color: '#666', fontFamily: 'var(--font-space)' }}>
+                You're all caught up! No new notifications right now.
+              </div>
             </motion.div>
           </motion.div>
         )}
@@ -275,8 +343,11 @@ export default function RomansChat() {
             <Link href="/romans-chat/profile" style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '0.75rem 1rem', borderRadius: '8px', color: '#d4d4d8', textDecoration: 'none', transition: 'background 0.2s' }} onMouseOver={(e) => e.currentTarget.style.background = '#111'} onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}>
               <User size={20} /> Profile
             </Link>
+            <Link href="/romans-chat/about" style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '0.75rem 1rem', borderRadius: '8px', color: '#d4d4d8', textDecoration: 'none', transition: 'background 0.2s' }} onMouseOver={(e) => e.currentTarget.style.background = '#111'} onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}>
+              <Info size={20} /> About Platform
+            </Link>
             <button onClick={() => auth.signOut()} style={{ display: 'flex', alignItems: 'center', gap: '1rem', padding: '0.75rem 1rem', borderRadius: '8px', color: '#ef4444', background: 'transparent', border: 'none', cursor: 'pointer', fontFamily: 'inherit', fontSize: '1rem', textAlign: 'left', transition: 'background 0.2s' }} onMouseOver={(e) => e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)'} onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}>
-              <LogOut size={20} /> Leave Connect
+              <LogOut size={20} /> Leave Exchange
             </button>
           </nav>
         </div>
@@ -295,16 +366,17 @@ export default function RomansChat() {
           <div className="mobile-only-header" style={{ padding: '0.75rem 1rem', borderBottom: '1px solid #222', background: '#111', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <h1 style={{ fontSize: '1.2rem', margin: 0, color: 'var(--primary)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <Building size={20}/> ROME CONNECT
+                <Building size={20}/> THE ROMAN EXCHANGE
               </h1>
-              <div style={{ display: 'flex', gap: '1rem', color: '#888' }}>
-                <Search size={20} />
-                <Bell size={20} />
+              <div style={{ display: 'flex', gap: '1rem', color: '#888', alignItems: 'center' }}>
+                <button style={{ background: 'none', border: 'none', color: 'inherit', padding: 0, cursor: 'pointer' }}><Search size={20} /></button>
+                <button onClick={() => setShowNotificationsModal(true)} style={{ background: 'none', border: 'none', color: 'inherit', padding: 0, cursor: 'pointer' }}><Bell size={20} /></button>
+                <Link href="/romans-chat/about" style={{ color: 'inherit' }}><Info size={20} /></Link>
                 <Link href="/romans-chat/profile" style={{ color: 'inherit' }}><User size={20} /></Link>
               </div>
             </div>
             <div style={{ display: 'flex', gap: '0.5rem' }}>
-              <button style={{ flex: 1, background: '#1a1a1a', border: '1px solid #333', color: '#fff', padding: '0.5rem', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', fontSize: '0.85rem' }}>
+              <button onClick={() => setShowInviteModal(true)} style={{ flex: 1, background: '#1a1a1a', border: '1px solid #333', color: '#fff', padding: '0.5rem', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', fontSize: '0.85rem', cursor: 'pointer' }}>
                 <UserPlus size={16}/> Add Neighbor
               </button>
               <button onClick={() => setActiveTab('trails')} style={{ flex: 1, background: '#1a1a1a', border: '1px solid #333', color: '#fff', padding: '0.5rem', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', fontSize: '0.85rem' }}>
@@ -316,10 +388,12 @@ export default function RomansChat() {
           {/* Desktop Top Bar (Hidden on Mobile) */}
           <div className="desktop-only" style={{ padding: '1rem 1.5rem', borderBottom: '1px solid #222', background: '#111', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
              <h1 style={{ fontSize: '1.5rem', margin: 0, color: 'var(--primary)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <Building size={24}/> ROME CONNECT
+                <Building size={24}/> THE ROMAN EXCHANGE
               </h1>
-              <div style={{ display: 'flex', gap: '1rem' }}>
-                <button style={{ background: '#1a1a1a', border: '1px solid #333', color: '#fff', padding: '0.5rem 1rem', borderRadius: '8px', display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+              <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                <Link href="/romans-chat/about" style={{ color: '#888', transition: 'color 0.2s', display: 'flex', alignItems: 'center' }} onMouseOver={(e)=>e.currentTarget.style.color='#fff'} onMouseOut={(e)=>e.currentTarget.style.color='#888'}><Info size={20} /></Link>
+                <button onClick={() => setShowNotificationsModal(true)} style={{ background: 'none', border: 'none', color: '#888', padding: '0 0.5rem', cursor: 'pointer', transition: 'color 0.2s' }} onMouseOver={(e)=>e.currentTarget.style.color='#fff'} onMouseOut={(e)=>e.currentTarget.style.color='#888'}><Bell size={20} /></button>
+                <button onClick={() => setShowInviteModal(true)} style={{ background: '#1a1a1a', border: '1px solid #333', color: '#fff', padding: '0.5rem 1rem', borderRadius: '8px', display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
                   <UserPlus size={16}/> Add Neighbor
                 </button>
                 <button onClick={() => setActiveTab('trails')} style={{ background: '#1a1a1a', border: '1px solid #333', color: '#fff', padding: '0.5rem 1rem', borderRadius: '8px', display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
@@ -462,9 +536,23 @@ export default function RomansChat() {
                       </div>
                     )}
 
-                    <div style={{ color: '#d4d4d8', fontSize: '1.1rem', lineHeight: '1.5', wordBreak: 'break-word', marginTop: '0.5rem', fontFamily: 'var(--font-space)' }}>
-                      <ExpandableText text={msg.text} renderFn={renderMessageText} maxLength={150} />
-                    </div>
+                    {editingPostId === msg.id ? (
+                      <div style={{ marginTop: '0.5rem' }}>
+                        <textarea 
+                          value={editInput}
+                          onChange={(e) => setEditInput(e.target.value)}
+                          style={{ width: '100%', background: '#000', border: '1px solid #333', color: '#fff', padding: '0.5rem', borderRadius: '8px', minHeight: '60px', fontFamily: 'inherit', fontSize: '1rem' }}
+                        />
+                        <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem' }}>
+                          <button onClick={() => handleEditSubmit(msg.id)} style={{ background: 'var(--primary)', color: '#000', border: 'none', padding: '0.25rem 1rem', borderRadius: '4px', fontWeight: 'bold', cursor: 'pointer' }}>Save</button>
+                          <button onClick={() => setEditingPostId(null)} style={{ background: 'transparent', color: '#888', border: '1px solid #333', padding: '0.25rem 1rem', borderRadius: '4px', cursor: 'pointer' }}>Cancel</button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div style={{ color: '#d4d4d8', fontSize: '1.1rem', lineHeight: '1.5', wordBreak: 'break-word', marginTop: '0.5rem', fontFamily: 'var(--font-space)' }}>
+                        <ExpandableText text={msg.text} renderFn={renderMessageText} maxLength={150} />
+                      </div>
+                    )}
                     
                     {msg.imageUrl && (
                       <div style={{ marginTop: '1rem', borderRadius: '12px', overflow: 'hidden', border: '1px solid #333' }}>
@@ -488,6 +576,13 @@ export default function RomansChat() {
                             </button>
                           );
                         })}
+                      </div>
+                    )}
+                    
+                    {user && user.uid === msg.uid && !isGuest && (
+                      <div style={{ display: 'flex', gap: '1rem', marginTop: '0.5rem', borderTop: '1px solid #222', paddingTop: '0.5rem' }}>
+                        <button onClick={() => { setEditingPostId(msg.id); setEditInput(msg.text); }} style={{ background: 'none', border: 'none', color: '#666', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.8rem', padding: 0 }}><Edit size={14} /> Edit</button>
+                        <button onClick={() => handleDelete(msg.id)} style={{ background: 'none', border: 'none', color: '#ef4444', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.8rem', padding: 0 }}><Trash2 size={14} /> Delete</button>
                       </div>
                     )}
                   </div>

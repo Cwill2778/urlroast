@@ -33,7 +33,12 @@ export default function ContractorsPage() {
         <Link href="/romans-chat" style={{ color: '#888', display: 'flex', alignItems: 'center' }}>
           <ArrowLeft size={24} />
         </Link>
-        <h1 style={{ fontSize: '1.2rem', margin: 0, color: 'var(--primary)', fontFamily: 'var(--font-oswald)' }}>Contractors Directory</h1>
+        <div style={{ display: 'flex', flexDirection: 'column' }}>
+          <h1 style={{ fontSize: '1.2rem', margin: 0, color: 'var(--primary)', fontFamily: 'var(--font-oswald)' }}>Contractors Directory</h1>
+          <div style={{ fontSize: '0.75rem', color: '#888', marginTop: '0.25rem', fontFamily: 'var(--font-space)' }}>
+            Feature suggestion by: <strong style={{ color: 'var(--primary)' }}>Charlie Ford</strong>
+          </div>
+        </div>
       </header>
       <main style={{ flex: 1, overflow: 'hidden' }}>
         <ContractorsBoard user={user} />
